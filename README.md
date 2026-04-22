@@ -1,34 +1,42 @@
-# AegisFlow - NextGen DevSecOps Control Plane (ASPM)
-**Phiên bản:** 2.0 (Modernized 2026) | **Tác giả:** Lê Tuấn Lương
+# AegisFlow - DevSecOps Enterprise Control Plane (ASPM)
+**Tác giả:** Lê Tuấn Lương
 
-AegisFlow là nền tảng **Application Security Posture Management (ASPM)** tiên phong tích hợp trí tuệ nhân tạo (Llama-3.3/4) để tự động hóa toàn bộ quy trình từ Quét lỗ hổng, Triage (Phân loại) đến Real-World Impact Analysis.
+AegisFlow là nền tảng **Application Security Posture Management (ASPM)** tiên phong tích hợp trí tuệ nhân tạo (Llama-3.3) để tự động hóa toàn bộ quy trình từ Quét lỗ hổng, Triage (Phân loại) đến Auto-Remediation (Tự động sửa lỗi).
 
 ## 🌟 Tính năng đột phá (2026 Edition)
 
-- **Interactive Security Control**: Điều khiển trực tiếp từ Dashboard. Nhập Target Path và API Key ngay trên giao diện để kích hoạt quét.
-- **Penta-Core Scanner Engine**: Hợp nhất 5 "ông lớn" bảo mật: **Semgrep** (SAST), **Trivy** (SCA), **Gitleaks** (Secrets), **Checkov** (IaC), và **Nuclei** (DAST).
-- **Parallel AI Triage (Multi-threaded)**: Phân tích hàng trăm lỗ hổng cùng lúc bằng AI với tốc độ "bàn thờ", giảm thời gian triage từ phút xuống giây.
-- **Real Business Impact Analysis**: AI đọc hiểu logic dự án để đưa ra ảnh hưởng thực tế (ví dụ: "Lộ dữ liệu khách hàng", "Bypass đăng nhập") thay vì các mô tả lý thuyết.
-- **OWASP Top 10: 2025 Ready**: Hỗ trợ đầy đủ các danh mục bảo mật mới nhất của năm 2025.
+- **AI Deep Context Analysis**: Không chỉ quét mã nguồn, AI còn đọc hiểu 20 dòng code xung quanh lỗ hổng để loại bỏ lỗi ảo (False Positives) với độ chính xác >95%.
+- **OWASP Top 10: 2025 Ready**: Hệ thống đầu tiên hỗ trợ đầy đủ các danh mục bảo mật mới nhất của năm 2025 (Supply Chain, Exceptional Conditions...).
+- **Quad-Core Scanner Engine**: Hợp nhất 4 "ông lớn" bảo mật: **Semgrep** (SAST), **Trivy** (SCA/SBOM), **Gitleaks 8.30.1** (Secrets), và **Checkov** (IaC).
+- **Autonomous Remediation**: AI tự động đề xuất và thiết kế các bản vá (Patch) sẵn sàng để copy-paste.
+- **Shift-Left Enforcement**: Tích hợp sẵn Gitleaks pre-commit hook ngăn chặn lộ secret ngay từ máy dev.
 
 ## 🚀 Quick Start (3 Phút)
 
-### 1. Khởi chạy Backend & Dashboard
-AegisFlow sử dụng server backend chuyên dụng để điều khiển hệ thống:
+### 1. Chế độ Demo (Simulation)
+Dùng để trải nghiệm nhanh không cần cài đặt công cụ:
 ```bash
-python3 server.py
+cd pipeline
+./run_pipeline.sh
 ```
-Mở trình duyệt tại: [http://localhost:58082](http://localhost:58082)
 
-### 2. Thực hiện Quét (Self-Service)
-1. Truy cập tab **Scanner Control** trên Dashboard.
-2. Nhập **Target Folder Path** (Vd: `./test-target-app`).
-3. Nhập **Groq API Key** của bạn.
-4. Nhấn **"Start Penta-Core Scan"** và theo dõi kết quả nhảy số theo thời gian thực.
+### 2. Chế độ Quét thật (Real-World Scan)
+Quét trực tiếp ứng dụng của bạn với sức mạnh của Llama-4:
+```bash
+export GROQ_API_KEY="gsk_..."
+./pipeline/run_real_scanners.sh /đường/dẫn/dự/án/của/bạn
+```
 
-### 3. Phân tích & Vá lỗi
-- **Action Center**: Xem phân tích **Real Impact** cho từng lỗ hổng.
-- **Developer Portal**: Lấy mã code đã được AI vá sẵn (Before/After) để áp dụng vào dự án.
+### 3. Xem Dashboard
+Sau khi quét, mở Dashboard để quản lý lỗ hổng:
+- **URL**: [http://localhost:58080](http://localhost:58080)
+- **Báo cáo HTML**: `DevSecOps_CaseStudy_Report.html`
+
+## 📊 Dashboard Preview
+Hệ thống sử dụng thiết kế **Glassmorphism** hiện đại, hiển thị trực quan:
+- Điểm số sức khỏe dự án (Security Score).
+- Bản đồ nhiệt lỗ hổng theo MITRE ATT&CK.
+- Danh sách ưu tiên xử lý theo SLA thời gian thực.
 
 ---
 **Organization**: CMC TSSG - DevSecOps Excellence Center
