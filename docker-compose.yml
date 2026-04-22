@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  vulnerable-app:
+    build: ./vulnerable-app
+    container_name: devsecops-target-app
+    ports: ["53000:53000"]
+    environment:
+      - NODE_ENV=development
+    networks: [devsecops-net]
+    labels:
+      - "description=Intentionally vulnerable Node.js app - DO NOT expose publicly"
+
+  pipeline-simulator:
+    image: python:3.11-slim
+    container_name: devsecops-pipeline
+    volumes:
+      - ./pipeline:/app/pipeline
+      - ./mock-data:/app/mock-data
+      - ./vulnerable-app:/app/vulnerable-app:ro
+    working_dir: /app/pipeline
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - PIPELINE_MODE=${PIPELINE_MODE:-simulate}
+    command: bash run_pipeline.sh
+    depends_on: [vulnerable-app]
+    networks: [devsecops-net]
+
+  ai-triage-dashboard:
+    image: nginx:alpine
+    container_name: devsecops-dashboard
+    ports: ["58080:80"]
+    volumes:
+      - ./dashboard:/usr/share/nginx/html:ro
+      - ./mock-data:/usr/share/nginx/html/data:ro
+    depends_on: [pipeline-simulator]
+    networks: [devsecops-net]
+
+networks:
+  devsecops-net:
+    driver: bridge

@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AegisFlow | DevSecOps Enterprise ASPM</title>
+  <!-- Chart.js for charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Phosphor Icons for premium feel -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app-layout">
+
+    <!-- =========================================
+         SIDEBAR
+         ========================================= -->
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <i class="ph-bold ph-shield-check"></i> AegisFlow
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 500;">
+          Enterprise Security Hub
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-group-title">Main</div>
+        <div class="nav-item active" id="nav-executive" onclick="switchTab('executive')">
+          <i class="ph ph-squares-four" style="font-size: 20px;"></i>
+          <span>Executive View</span>
+        </div>
+        <div class="nav-item" id="nav-action" onclick="switchTab('action')">
+          <i class="ph ph-warning-circle" style="font-size: 20px;"></i>
+          <span>Action Center</span>
+        </div>
+        <div class="nav-item" id="nav-scanner" onclick="switchTab('scanner')">
+          <i class="ph ph-scan" style="font-size: 20px;"></i>
+          <span>Scanner Control</span>
+        </div>
+        <div class="nav-item" id="nav-pipeline" onclick="switchTab('pipeline')">
+          <i class="ph ph-git-merge" style="font-size: 20px;"></i>
+          <span>Pipeline Status</span>
+        </div>
+        <div class="nav-item" id="nav-ai" onclick="switchTab('ai')">
+          <i class="ph ph-cpu" style="font-size: 20px;"></i>
+          <span>AI Analysis Hub</span>
+        </div>
+        <div class="nav-item" id="nav-dev" onclick="switchTab('dev')">
+          <i class="ph ph-code" style="font-size: 20px;"></i>
+          <span>Dev Portal</span>
+        </div>
+        <div class="nav-item" id="nav-sbom" onclick="switchTab('sbom')">
+          <i class="ph ph-package" style="font-size: 20px;"></i>
+          <span>Supply Chain (SBOM)</span>
+        </div>
+
+        <div class="nav-group-title" style="margin-top: 24px;">Security & Ops</div>
+        <div class="nav-item" id="nav-override" onclick="switchTab('override')">
+          <i class="ph ph-shield-warning" style="font-size: 20px;"></i>
+          <span>Override Center</span>
+        </div>
+        <div class="nav-item" id="nav-audit" onclick="switchTab('audit')">
+          <i class="ph ph-list-dashes" style="font-size: 20px;"></i>
+          <span>Audit Log</span>
+        </div>
+      </nav>
+
+      <div style="padding: 20px; border-top: 1px solid var(--border-light); font-size: 12px; color: var(--text-muted);">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <div style="width: 8px; height: 8px; background: var(--sev-low); border-radius: 50%;"></div>
+          System Online
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="blink" style="width: 8px; height: 8px; background: var(--sev-critical); border-radius: 50%;"></div>
+          Pipeline Blocked
+        </div>
+      </div>
+    </aside>
+
+    <!-- =========================================
+         MAIN CONTENT
+         ========================================= -->
+    <main id="main-content">
+
+      <!-- Topbar -->
+      <header id="topbar">
+        <div>
+          <div id="project-name" style="font-size: 16px; font-weight: 700; color: var(--text-main);">Project: vulnerable-app</div>
+          <div id="scan-meta" class="font-mono" style="font-size: 11px; color: var(--text-muted);">Scan: 2026-05-19T08:00:00Z · Branch: main</div>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <span class="badge badge-critical blink">Pipeline Blocked</span>
+          <span class="badge badge-outline">llama-3.3-70b Active</span>
+          <img src="https://ui-avatars.com/api/?name=Admin&background=ff6b00&color=fff&rounded=true&size=32" alt="User" />
+        </div>
+      </header>
+
+      <!-- View Container (Scrollable) -->
+      <div class="view-container">
+
+        <!-- 1. Executive View -->
+        <div id="tab-executive" class="tab-panel active">
+          <div style="display: flex; justify-content: space-between; align-items:flex-end; margin-bottom: 24px;">
+            <div>
+              <h2 style="font-size: 24px; margin-bottom: 4px;">Executive Overview</h2>
+              <p style="color: var(--text-muted); font-size: 14px;">High-level CISO metrics and risk exposure.</p>
+            </div>
+            <button class="btn btn-outline" onclick="initCharts()"><i class="ph ph-arrows-clockwise"></i> Refresh</button>
+          </div>
+
+          <div class="grid-4" style="margin-bottom: 24px;">
+            <div class="card card-alert-red" style="text-align: center;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Security Score</div>
+              <div id="score-value" class="stat-value" style="color: var(--sev-critical);">--<span style="font-size: 16px; color: var(--text-muted);">/100</span></div>
+              <div id="grade-badge" class="badge badge-critical">CALCULATING...</div>
+            </div>
+            <div class="card card-alert-red" style="text-align: center;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Critical Findings</div>
+              <div class="stat-value blink" style="color: var(--sev-critical);">3</div>
+              <div style="font-size: 12px; color: var(--sev-critical); font-weight: 500;">Action Required</div>
+            </div>
+            <div class="card card-alert-orange" style="text-align: center;">
+              <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Pending Triage</div>
+              <div class="stat-value" style="color: var(--brand-primary);" id="kpi-pending">9</div>
+              <div style="font-size: 12px; color: var(--text-muted); font-weight: 500;">AI Pre-filtered</div>
+            </div>
+            <div class="card" style="text-align: center; border-bottom: 3px solid var(--sev-low);">
+              <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">SLA Breaches</div>
+              <div class="stat-value" style="color: var(--sev-low);">0</div>
+              <div style="font-size: 12px; color: var(--text-muted); font-weight: 500;">All within limits</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h3 style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px; text-transform: uppercase;">Findings by Severity</h3>
+              <div style="position: relative; height: 250px; display: flex; justify-content: center;">
+                <canvas id="donutChart"></canvas>
+              </div>
+            </div>
+            <div class="card">
+              <h3 style="font-size: 14px; color: var(--text-muted); margin-bottom: 16px; text-transform: uppercase;">OWASP Top 10 Breakdown</h3>
+              <div style="height: 250px;">
+                <canvas id="barChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Action Center -->
+        <div id="tab-action" class="tab-panel">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <div>
+              <h2 style="font-size: 24px; margin-bottom: 4px;">Action Center</h2>
+              <p style="color: var(--text-muted); font-size: 14px;" id="action-counts">Loading findings...</p>
+            </div>
+            <div class="filter-group">
+              <button class="filter-btn active" onclick="setFilter('severity', 'all', this)">All</button>
+              <button class="filter-btn" onclick="setFilter('severity', 'CRITICAL', this)">Critical</button>
+              <button class="filter-btn" onclick="setFilter('severity', 'HIGH', this)">High</button>
+              <button class="filter-btn" onclick="setFilter('severity', 'MEDIUM', this)">Medium</button>
+            </div>
+          </div>
+
+          <div id="findings-list" class="finding-list">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- 2b. Scanner Control -->
+        <div id="tab-scanner" class="tab-panel">
+          <div style="margin-bottom: 24px;">
+            <h2 style="font-size: 24px; margin-bottom: 4px;">Scanner Control</h2>
+            <p style="color: var(--text-muted); font-size: 14px;">Trigger real-time security scans on your local machine.</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+               <h3 style="font-size: 16px; margin-bottom: 20px;">Configuration</h3>
+               <div class="input-group">
+                 <label class="input-label">Target Folder Path</label>
+                 <input type="text" id="scan-target" class="input-control" placeholder="e.g. ./test-target-app" value="./test-target-app" />
+               </div>
+               <div class="input-group">
+                 <label class="input-label">Groq AI API Key</label>
+                 <div style="position: relative;">
+                    <input type="password" id="scan-api-key" class="input-control" placeholder="gsk_..." />
+                 </div>
+                 <p style="font-size: 11px; color: var(--text-muted); mt: 4px;">Key will be used for Llama-3 Triage.</p>
+               </div>
+               <button class="btn btn-primary" id="btn-start-scan" style="width: 100%; margin-top: 20px;" onclick="triggerScan()">
+                  <i class="ph ph-rocket-launch"></i> Start Penta-Core Scan
+               </button>
+            </div>
+
+            <div class="card">
+               <h3 style="font-size: 16px; margin-bottom: 20px;">Scan Status</h3>
+               <div id="scan-status-indicator" style="text-align: center; padding: 40px 0;">
+                  <i class="ph ph-shield-check" style="font-size: 64px; color: var(--sev-low); margin-bottom: 16px;"></i>
+                  <p id="scan-status-text" style="font-weight: 600;">Engine Ready</p>
+                  <p style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">Waiting for user command...</p>
+               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Pipeline -->
+        <div id="tab-pipeline" class="tab-panel">
+           <div style="margin-bottom: 24px;">
+              <h2 style="font-size: 24px; margin-bottom: 4px;">Pipeline Integration</h2>
+              <p style="color: var(--text-muted); font-size: 14px;">Security gates and scan stages.</p>
+           </div>
+           <div class="card" style="text-align: center; padding: 60px 20px;">
+               <div style="font-size: 48px; margin-bottom: 16px;">🛑</div>
+               <h3 style="font-size: 20px; color: var(--sev-critical); margin-bottom: 8px;">Pipeline Blocked by Policy Engine</h3>
+               <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto;">3 Critical findings detected. Merging to protected branch 'main' is denied until findings are triaged and either fixed or granted an exception.</p>
+               <button class="btn btn-primary" style="margin-top: 24px;" onclick="switchTab('override')">Request Override</button>
+           </div>
+        </div>
+
+        <!-- 4. AI Hub -->
+        <div id="tab-ai" class="tab-panel">
+          <div style="margin-bottom: 24px;">
+              <h2 style="font-size: 24px; margin-bottom: 4px;">AI Triage Hub</h2>
+              <p style="color: var(--text-muted); font-size: 14px;">Automated analysis via Groq LLaMA-3.3-70b</p>
+          </div>
+          <div class="ai-hub-grid">
+            <div class="ai-list-wrap" id="ai-list">
+              <!-- Rendered via JS -->
+            </div>
+            <div class="ai-detail-wrap">
+              <div class="card" id="ai-detail">
+                <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
+                  <i class="ph ph-robot" style="font-size: 48px; margin-bottom: 16px;"></i>
+                  <p>Select a finding from the list to view detailed AI analysis.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Dev Portal -->
+        <div id="tab-dev" class="tab-panel">
+          <div style="margin-bottom: 24px;">
+              <h2 style="font-size: 24px; margin-bottom: 4px;">Developer Portal</h2>
+              <p style="color: var(--text-muted); font-size: 14px;">Findings explicitly assigned to you for remediation.</p>
+          </div>
+          <div id="dev-portal-content" class="finding-list">
+              <!-- Rendered via JS -->
+          </div>
+        </div>
+
+        <!-- 6. SBOM -->
+        <div id="tab-sbom" class="tab-panel">
+          <div style="margin-bottom: 24px;">
+              <h2 style="font-size: 24px; margin-bottom: 4px;">Software Bill of Materials (SBOM)</h2>
+              <p style="color: var(--text-muted); font-size: 14px;">Dependencies and software components inventory.</p>
+          </div>
+          <div class="card">
+             <div class="code-container">
+               <div class="code-container-header">
+                 <span>cyclonedx.json</span>
+               </div>
+               <pre class="code-block" id="sbom-data">Loading SBOM data...</pre>
+             </div>
+          </div>
+        </div>
+
+        <!-- 7. Override -->
+        <div id="tab-override" class="tab-panel">
+          <div style="margin-bottom: 24px;">
+              <h2 style="font-size: 24px; margin-bottom: 4px;">Override Center</h2>
+              <p style="color: var(--text-muted); font-size: 14px;">Submit business justifications to temporarily unblock pipelines.</p>
+          </div>
+
+          <div class="grid-2">
+            <div>
+              <h3 style="font-size: 16px; margin-bottom: 16px;">Blocking Findings</h3>
+              <div id="blocking-findings">
+                <!-- Rendered JS -->
+              </div>
+            </div>
+            <div>
+              <div class="card" id="exception-form-container">
+                <h3 style="font-size: 16px; margin-bottom: 16px;">Request Exception</h3>
+                <div class="input-group">
+                  <label class="input-label">Business Justification</label>
+                  <textarea id="exc-justification" class="input-control" rows="4" placeholder="Detail why this must be deployed with known vulnerabilities..."></textarea>
+                </div>
+                <div class="input-group">
+                  <label class="input-label">Target Fix Date</label>
+                  <input type="date" id="exc-date" class="input-control" />
+                </div>
+                <div class="grid-2">
+                  <div class="input-group">
+                    <label class="input-label">Security Lead (Approver)</label>
+                    <input type="text" id="exc-approver" class="input-control" placeholder="e.g. John Doe" />
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label">Product Manager</label>
+                    <input type="text" id="exc-pm" class="input-control" placeholder="e.g. Jane Smith" />
+                  </div>
+                </div>
+                <label style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 24px; cursor: pointer;">
+                  <input type="checkbox" id="exc-accept" style="margin-top: 4px;">
+                  <span style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">I acknowledge accepting the risk associated with deploying critical findings to production, pending PM and SecLead approval.</span>
+                </label>
+                <button class="btn btn-primary" style="width: 100%;" onclick="submitException()">Submit Exception Request</button>
+              </div>
+
+              <div class="card" id="exception-success" style="display: none; border-color: var(--sev-low); background: #f0fdf4;">
+                 <h3 style="color: var(--sev-low); font-size: 18px; margin-bottom: 8px;" id="exc-ref">Exception Logged</h3>
+                 <div id="exc-conditions" style="font-size: 14px; color: var(--text-main); margin-bottom: 24px;"></div>
+                 <button class="btn btn-outline" onclick="resetException()">Submit Another</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 8. Audit -->
+        <div id="tab-audit" class="tab-panel">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <div>
+              <h2 style="font-size: 24px; margin-bottom: 4px;">Audit Log</h2>
+              <p style="color: var(--text-muted); font-size: 14px;">Immutable evidence trail for compliance.</p>
+            </div>
+            <button class="btn btn-outline" onclick="exportAuditCSV()"><i class="ph ph-download-simple"></i> Export CSV</button>
+          </div>
+
+          <div class="table-container">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Actor</th>
+                  <th>Action</th>
+                  <th>Finding ID</th>
+                  <th>Detail</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table-body">
+                <!-- Rendered via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MODALS -->
+  <div class="modal-overlay" id="modal-verify">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Verify True Positive</h3>
+        <button class="modal-close" onclick="closeModal('modal-verify')"><i class="ph ph-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-verify-finding" style="margin-bottom: 20px; font-size: 14px;"></div>
+        <div class="input-group">
+          <label class="input-label">Analyst Name</label>
+          <input type="text" id="verify-analyst" class="input-control" placeholder="Your name..." />
+        </div>
+        <div class="input-group">
+          <label class="input-label">Verification Notes</label>
+          <textarea id="verify-notes" class="input-control" rows="3" placeholder="Notes on finding validation..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-verify')">Cancel</button>
+        <button class="btn btn-success" onclick="confirmVerify()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-assign">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Assign to Developer</h3>
+        <button class="modal-close" onclick="closeModal('modal-assign')"><i class="ph ph-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div id="modal-assign-finding" style="margin-bottom: 12px; font-size: 14px;"></div>
+        <div id="assign-sla-info" style="margin-bottom: 20px; background: var(--bg-surface-hover); padding: 12px; border-radius: 8px;"></div>
+        <div class="input-group">
+          <label class="input-label">Select Developer</label>
+          <select id="assign-dev" class="input-control">
+            <option value="">-- Choose one --</option>
+            <option value="dev.backend@company.local">dev.backend@company.local</option>
+            <option value="lead.arch@company.local">lead.arch@company.local</option>
+            <option value="john.doe@company.local">john.doe@company.local</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-assign')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmAssign()">Assign</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-fixed">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">Submit Fix</h3>
+        <button class="modal-close" onclick="closeModal('modal-fixed')"><i class="ph ph-x"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="input-group">
+          <label class="input-label">Commit Hash or PR URL</label>
+          <input type="text" id="fix-commit" class="input-control" placeholder="e.g. 5d8a9f..." />
+        </div>
+        <div class="input-group">
+          <label class="input-label">Implementation Notes</label>
+          <textarea id="fix-notes" class="input-control" rows="3" placeholder="Any details for Security team..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-fixed')">Cancel</button>
+        <button class="btn btn-success" onclick="confirmFixed()">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Application Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

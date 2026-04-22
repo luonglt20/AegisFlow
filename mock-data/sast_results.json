@@ -1,0 +1,249 @@
+{
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "Semgrep (Simulated Bridge)",
+          "version": "1.0.0",
+          "informationUri": "https://semgrep.dev"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "generic.secrets.security.detected-generic-secret",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded secret detected in source file."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/config/db.js"
+                },
+                "region": {
+                  "startLine": 32,
+                  "snippet": {
+                    "text": "const API_KEY     = 'sk-prod-xK92mNpL3j8KqPx7vRtWbYsEnFdGhJz'; // [VULN-005] NEVER hardcode secrets"
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "HIGH",
+            "cvss_v3": 7.5,
+            "cwe": "CWE-798",
+            "owasp_category": "A07:2021 \u2013 Identification and Authentication Failures",
+            "mode": "SIMULATED"
+          }
+        },
+        {
+          "ruleId": "generic.secrets.security.detected-generic-secret",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded secret detected in source file."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/config/db.js"
+                },
+                "region": {
+                  "startLine": 33,
+                  "snippet": {
+                    "text": "const DB_PASSWORD = 'admin123';                                   // [VULN-005] Weak + hardcoded DB password"
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "HIGH",
+            "cvss_v3": 7.5,
+            "cwe": "CWE-798",
+            "owasp_category": "A07:2021 \u2013 Identification and Authentication Failures",
+            "mode": "SIMULATED"
+          }
+        },
+        {
+          "ruleId": "generic.secrets.security.detected-generic-secret",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded secret detected in source file."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/config/db.js"
+                },
+                "region": {
+                  "startLine": 34,
+                  "snippet": {
+                    "text": "const JWT_SECRET  = 'supersecret_jwt_key_do_not_share';           // [VULN-005] Hardcoded JWT signing secret"
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "HIGH",
+            "cvss_v3": 7.5,
+            "cwe": "CWE-798",
+            "owasp_category": "A07:2021 \u2013 Identification and Authentication Failures",
+            "mode": "SIMULATED"
+          }
+        },
+        {
+          "ruleId": "generic.secrets.security.detected-generic-secret",
+          "level": "error",
+          "message": {
+            "text": "Hardcoded secret detected in source file."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/config/db.js"
+                },
+                "region": {
+                  "startLine": 35,
+                  "snippet": {
+                    "text": "const SMTP_PASS   = 'Email@P4ssw0rd!';                            // [VULN-005] Hardcoded SMTP credential"
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "HIGH",
+            "cvss_v3": 7.5,
+            "cwe": "CWE-798",
+            "owasp_category": "A07:2021 \u2013 Identification and Authentication Failures",
+            "mode": "SIMULATED"
+          }
+        },
+        {
+          "ruleId": "javascript.express.security.audit.sqli",
+          "level": "error",
+          "message": {
+            "text": "SQL Injection detected: user-supplied input is concatenated directly into a SQL query string."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/user.js"
+                },
+                "region": {
+                  "startLine": 50,
+                  "snippet": {
+                    "text": "const query = \"SELECT * FROM users WHERE id=\" + id; // [VULN-001] NEVER concatenate user input into SQL"
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "CRITICAL",
+            "cvss_v3": 9.8,
+            "cwe": "CWE-89",
+            "owasp_category": "A03:2021 \u2013 Injection",
+            "mode": "SIMULATED"
+          }
+        },
+        {
+          "ruleId": "javascript.express.security.audit.sqli",
+          "level": "error",
+          "message": {
+            "text": "SQL Injection detected: user-supplied input is concatenated directly into a SQL query string."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/user.js"
+                },
+                "region": {
+                  "startLine": 113,
+                  "snippet": {
+                    "text": "const query = \"DELETE FROM users WHERE id=\" + id; // [VULN-001]"
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "CRITICAL",
+            "cvss_v3": 9.8,
+            "cwe": "CWE-89",
+            "owasp_category": "A03:2021 \u2013 Injection",
+            "mode": "SIMULATED"
+          }
+        },
+        {
+          "ruleId": "javascript.lang.security.audit.path-traversal",
+          "level": "error",
+          "message": {
+            "text": "Path traversal vulnerability: user-controlled parameter appended to filesystem path."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/file.js"
+                },
+                "region": {
+                  "startLine": 47,
+                  "snippet": {
+                    "text": "// VULNERABLE: __dirname + req.query.filename allows directory traversal."
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "HIGH",
+            "cvss_v3": 7.3,
+            "cwe": "CWE-22",
+            "owasp_category": "A01:2021 \u2013 Broken Access Control",
+            "mode": "SIMULATED"
+          }
+        },
+        {
+          "ruleId": "javascript.lang.security.audit.path-traversal",
+          "level": "error",
+          "message": {
+            "text": "Path traversal vulnerability: user-controlled parameter appended to filesystem path."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "src/routes/file.js"
+                },
+                "region": {
+                  "startLine": 52,
+                  "snippet": {
+                    "text": "const filePath = __dirname + req.query.filename; // [VULN-003] NEVER concatenate user input to paths"
+                  }
+                }
+              }
+            }
+          ],
+          "properties": {
+            "severity": "HIGH",
+            "cvss_v3": 7.3,
+            "cwe": "CWE-22",
+            "owasp_category": "A01:2021 \u2013 Broken Access Control",
+            "mode": "SIMULATED"
+          }
+        }
+      ]
+    }
+  ]
+}

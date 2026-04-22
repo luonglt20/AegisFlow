@@ -1,0 +1,18 @@
+{
+  "pipeline_status": "BLOCKED",
+  "block_reason": "1 CRITICAL finding(s) detected \u2014 pipeline gate enforced by AppSec policy",
+  "timestamp": "2026-04-22T16:47:19Z",
+  "findings_summary": {
+    "HIGH": 1,
+    "MEDIUM": 1,
+    "LOW": 1,
+    "CRITICAL": 1
+  },
+  "total_findings": 4,
+  "action_required": "Human review required via Dashboard",
+  "dashboard_url": "http://localhost:58080",
+  "exception_allowed": true,
+  "exception_approver": "Security Lead",
+  "policy_version": "2.1",
+  "exit_code": 1
+}

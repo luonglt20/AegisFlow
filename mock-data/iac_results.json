@@ -1,0 +1,37 @@
+{
+  "check_type": "dockerfile",
+  "results": {
+    "failed_checks": [
+      {
+        "check_id": "CKV_DOCKER_2",
+        "check_name": "Ensure non-root user is specified",
+        "severity": "CRITICAL",
+        "file_path": "Dockerfile",
+        "message": "No USER instruction found. Container runs as root.",
+        "mode": "SIMULATED"
+      },
+      {
+        "check_id": "CKV_DOCKER_7",
+        "check_name": "Ensure HEALTHCHECK instructions are added",
+        "severity": "MEDIUM",
+        "file_path": "Dockerfile",
+        "message": "No HEALTHCHECK defined.",
+        "mode": "SIMULATED"
+      },
+      {
+        "check_id": "CKV_DOCKER_1",
+        "check_name": "Ensure port 22 is not exposed",
+        "severity": "HIGH",
+        "file_path": "Dockerfile",
+        "message": "SSH port 22 is exposed.",
+        "mode": "SIMULATED"
+      }
+    ],
+    "passed_checks": []
+  },
+  "summary": {
+    "failed": 3,
+    "passed": 1,
+    "resource_count": 1
+  }
+}
