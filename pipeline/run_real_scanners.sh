@@ -4,6 +4,7 @@
 TARGET_FOLDER=${1:-"vulnerable-app"}
 ROOT_PATH=$(pwd)
 BIN_PATH="$ROOT_PATH/pipeline/.bin"
+INGEST_PATH="$ROOT_PATH/ingest"
 MOCK_DATA_PATH="$ROOT_PATH/mock-data"
 if [[ "$1" == /* ]]; then
     TARGET_FULL_PATH="$1"
@@ -79,9 +80,9 @@ fi
 chmod +x "$TRIVY_EXE" "$GL_EXE" "$NUCLEI_EXE"
 
 # 3. Execute
-TRIVY_OUT="$BIN_PATH/trivy_out.json"
-GL_OUT="$BIN_PATH/gitleaks_out.json"
-NUCLEI_OUT="$BIN_PATH/nuclei_out.json"
+TRIVY_OUT="$INGEST_PATH/sca_trivy.json"
+GL_OUT="$INGEST_PATH/secret_gitleaks.json"
+NUCLEI_OUT="$INGEST_PATH/nuclei_dast.json"
 
 echo "[*] Executing Trivy SCA & Misconfig..."
 "$TRIVY_EXE" fs "$TARGET_FULL_PATH" --scanners vuln,misconfig --format json --output "$TRIVY_OUT" > /dev/null 2>&1
@@ -92,14 +93,14 @@ echo "[*] Executing Gitleaks Secret Scanning..."
 # 4. Install & Execute Semgrep (SAST)
 echo "[*] Ensuring Semgrep (SAST) is installed via pip..."
 python3 -m pip install semgrep -q --disable-pip-version-check
-SEMGREP_OUT="$BIN_PATH/semgrep_out.json"
+SEMGREP_OUT="$INGEST_PATH/sast_semgrep.json"
 echo "[*] Executing Semgrep SAST..."
 semgrep scan --config=auto --json -o "$SEMGREP_OUT" "$TARGET_FULL_PATH" > /dev/null 2>&1
 
 # 5. Install & Execute Checkov (IaC)
 echo "[*] Ensuring Checkov (IaC) is installed via pip..."
 python3 -m pip install checkov -q --disable-pip-version-check
-CHECKOV_OUT="$BIN_PATH/checkov_out.json"
+CHECKOV_OUT="$INGEST_PATH/iac_checkov.json"
 echo "[*] Executing Checkov IaC Configuration Scan..."
 checkov -d "$TARGET_FULL_PATH" -o json > "$CHECKOV_OUT" 2> /dev/null
 
@@ -109,21 +110,23 @@ echo "[*] Executing Nuclei DAST (Detection)..."
 # For now, we scan for general web vulnerabilities in the project itself (configs, etc.)
 "$NUCLEI_EXE" -target "$TARGET_FULL_PATH" -severity critical,high -json -o "$NUCLEI_OUT" > /dev/null 2>&1
 
-# 7. Aggregate using Python
-echo "[*] Aggregating results into AegisFlow format..."
-FINAL_OUT="$MOCK_DATA_PATH/full_report_triaged.json"
-python3 "$ROOT_PATH/pipeline/aggregate_scanners.py" "$TARGET_FOLDER" "$TRIVY_OUT" "$GL_OUT" "$SEMGREP_OUT" "$CHECKOV_OUT" "$NUCLEI_OUT" "$FINAL_OUT"
+# 7. Aggregate using native Report Generator
+echo "[*] Aggregating real scanner results via Zero-Config Ingestion..."
+export CONSOLIDATED_REPORT="$MOCK_DATA_PATH/full_report.json"
+python3 "$ROOT_PATH/pipeline/report_generator.py"
 
-# [NEW] Sync with Dashboard
-mkdir -p "$ROOT_PATH/dashboard/data"
-cp "$FINAL_OUT" "$ROOT_PATH/dashboard/data/full_report_triaged.json"
 
 # 8. Trigger Autonomous AI Triage
 echo "[*] Waking up Llama-3 AI Triage Engine..."
+# ai_triage_engine.py reads from full_report.json by default
 python3 "$ROOT_PATH/pipeline/ai_triage_engine.py"
 
+# 9. Sync with Dashboard
+mkdir -p "$ROOT_PATH/dashboard/data"
+cp "$MOCK_DATA_PATH/full_report_triaged.json" "$ROOT_PATH/dashboard/data/full_report_triaged.json"
+
 if [ $? -eq 0 ]; then
-    echo "[OK] Quad-Core AegisFlow Engine completed successfully."
+    echo "[OK] Enterprise AegisFlow Engine completed successfully."
     echo "     Results are live on the AI Dashboard."
 else
     echo "[!] Engine encountered an issue during analysis."

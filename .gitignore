@@ -3,3 +3,17 @@ node_modules/
 __pycache__/
 *.pyc
 pipeline/.bin/
+
+# Exclude Data, Logs, Tests as requested
+mock-data/
+ingest/
+logs/
+NodeGoat/
+vulnerable-app/
+test-target-app/
+tests/
+test/
+*results.json
+*.log
+DevSecOps_CaseStudy_Report.html
+full_report_triaged.json

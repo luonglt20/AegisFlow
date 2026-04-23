@@ -29,14 +29,8 @@ import os
 # ─────────────────────────────────────────────────────────────
 SCRIPT_DIR   = Path(__file__).parent.resolve()
 ROOT_DIR     = SCRIPT_DIR.parent
+INGEST_DIR   = ROOT_DIR / "ingest"
 MOCK_DIR     = ROOT_DIR / "mock-data"
-
-SAST_FILE    = Path(os.environ.get("SAST_REPORT", MOCK_DIR / "sast_results.json"))
-SCA_FILE     = Path(os.environ.get("SCA_REPORT", MOCK_DIR / "sca_results.json"))
-IAC_FILE     = Path(os.environ.get("IAC_REPORT", MOCK_DIR / "iac_results.json"))
-SECRET_FILE  = Path(os.environ.get("SECRET_REPORT", MOCK_DIR / "secret_results.json"))
-DAST_FILE    = Path(os.environ.get("DAST_REPORT", MOCK_DIR / "dast_results.json"))
-SBOM_FILE    = Path(os.environ.get("SBOM_REPORT", MOCK_DIR / "sbom.json"))
 OUTPUT_FILE  = Path(os.environ.get("CONSOLIDATED_REPORT", MOCK_DIR / "full_report.json"))
 
 # ─────────────────────────────────────────────────────────────
@@ -199,21 +193,21 @@ ENRICHMENT: dict[str, dict] = {
 # SLA hours by severity
 SLA_BY_SEVERITY = {"CRITICAL": 24, "HIGH": 72, "MEDIUM": 168, "LOW": 720}
 
-# OWASP 2021 mapping by CWE
-OWASP_MAP: dict[str, str] = {
-    "CWE-89":   "A03:2021 – Injection",
-    "CWE-79":   "A03:2021 – Injection",
-    "CWE-22":   "A01:2021 – Broken Access Control",
-    "CWE-284":  "A01:2021 – Broken Access Control",
-    "CWE-798":  "A07:2021 – Identification and Authentication Failures",
-    "CWE-918":  "A10:2021 – Server-Side Request Forgery (SSRF)",
-    "CWE-917":  "A06:2021 – Vulnerable and Outdated Components",
-    "CWE-1321": "A06:2021 – Vulnerable and Outdated Components",
-    "CWE-250":  "A05:2021 – Security Misconfiguration",
-    "CWE-614":  "A02:2021 – Cryptographic Failures",
-    "CWE-209":  "A05:2021 – Security Misconfiguration",
-    "CWE-693":  "A05:2021 – Security Misconfiguration",
-    "CWE-778":  "A05:2021 – Security Misconfiguration",
+# OWASP 2025 mapping by CWE (Enterprise Upgrade)
+OWASP_MAP_2025: dict[str, str] = {
+    "CWE-89":   "A03:2025 – Injection",
+    "CWE-79":   "A03:2025 – Injection",
+    "CWE-22":   "A01:2025 – Broken Access Control",
+    "CWE-284":  "A01:2025 – Broken Access Control",
+    "CWE-798":  "A07:2025 – Identification and Authentication Failures",
+    "CWE-918":  "A10:2025 – Server-Side Request Forgery (SSRF)",
+    "CWE-917":  "A06:2025 – Vulnerable and Outdated Components",
+    "CWE-1321": "A06:2025 – Vulnerable and Outdated Components",
+    "CWE-250":  "A05:2025 – Security Misconfiguration",
+    "CWE-614":  "A02:2025 – Cryptographic Failures",
+    "CWE-209":  "A05:2025 – Security Misconfiguration",
+    "CWE-693":  "A05:2025 – Security Misconfiguration",
+    "CWE-778":  "A05:2025 – Security Misconfiguration",
 }
 
 # ─────────────────────────────────────────────────────────────
@@ -255,9 +249,18 @@ def make_finding(idx: int, source_tool: str, scan_type: str,
     """Assemble a normalized finding dict for full_report.json."""
     mitre    = MITRE_MAP.get(cwe, MITRE_MAP.get("CWE-89"))
     enrich   = ENRICHMENT.get(enrichment_key, {})
-    owasp    = OWASP_MAP.get(cwe, "A05:2021 – Security Misconfiguration")
+    owasp    = OWASP_MAP_2025.get(cwe, "A05:2025 – Security Misconfiguration")
     sla_hrs  = SLA_BY_SEVERITY.get(severity, 168)
     epss     = get_epss(rule_id if rule_id in EPSS_MAP else cwe)
+
+    # [CORE 3.0] Self-Healing Knowledge Base Integration
+    REMEDY_KB = {
+        "A03:2025 – Injection": "Implement parameterized queries (SQL), context-aware output encoding (XSS), and avoid shell execution.",
+        "A01:2025 – Broken Access Control": "Enforce IDOR protection by scoping queries to current_user.id. Implement PKCE for OAuth2.",
+        "A02:2025 – Cryptographic Failures": "Use Argon2/bcrypt for passwords (12+ rounds). Implement AES-256-GCM for data at rest.",
+        "A05:2025 – Security Misconfiguration": "Implement Security Headers: CSP (nonce-based), HSTS, X-Content-Type-Options: nosniff.",
+        "A10:2025 – Server-Side Request Forgery (SSRF)": "Use an Allowlist for outbound URLs. Resolve DNS and check if the IP is in a private range.",
+    }
 
     base = {
         "id":                  f"FIND-{idx:03d}",
@@ -270,11 +273,11 @@ def make_finding(idx: int, source_tool: str, scan_type: str,
         "epss_score":          epss["probability"],
         "epss_percentile":     epss["percentile"],
         "cve_cwe":             cwe,
-        "owasp_2021":          owasp,
+        "owasp_2025":          owasp,
         "mitre_attack":        mitre,
         "business_impact":     enrich.get("business_impact", "See finding details."),
         "real_exploit_scenario": enrich.get("real_exploit_scenario", "N/A"),
-        "remediation_hint":    enrich.get("remediation_hint", "See tool guidance."),
+        "remediation_hint":    enrich.get("remediation_hint", REMEDY_KB.get(owasp, "Review tool guidance.")),
         "status":              "PENDING_TRIAGE",
         "ai_analysis":         None,
         "ai_fix":              None,
@@ -283,6 +286,10 @@ def make_finding(idx: int, source_tool: str, scan_type: str,
         "sla_deadline":        None,
         "verified_by":         None,
         "exception_approved":  False,
+        "technical_evidence": {
+            "captured_at": datetime.now(timezone.utc).isoformat(),
+            "tool_confidence": "HIGH" if cvss > 7 else "MEDIUM"
+        }
     }
     if extra:
         base.update(extra)
@@ -396,34 +403,36 @@ def parse_checkov(data: dict, start_idx: int) -> list[dict]:
         "CKV_DOCKER_1": 5.3,
     }
 
-    for check in data.get("results", {}).get("failed_checks", []):
-        check_id = check.get("check_id", "UNKNOWN")
-        severity = check.get("severity", "MEDIUM")
-        cwe      = check_cwe_map.get(check_id, "CWE-0")
-        cvss     = cvss_map.get(check_id, 4.0)
-        title    = check.get("check_name", check_id)[:120]
-        file_    = check.get("file_path", "")
+    reports = data if isinstance(data, list) else [data]
+    for report in reports:
+        for check in report.get("results", {}).get("failed_checks", []):
+            check_id = check.get("check_id", "UNKNOWN")
+            severity = check.get("severity", "MEDIUM")
+            cwe      = check_cwe_map.get(check_id, "CWE-0")
+            cvss     = cvss_map.get(check_id, 4.0)
+            title    = check.get("check_name", check_id)[:120]
+            file_    = check.get("file_path", "")
 
-        code_block = check.get("code_block", [])
-        snippet = ""
-        if code_block:
-            snippet = "".join(ln[1] for ln in code_block[:3] if len(ln) > 1)
+            code_block = check.get("code_block", [])
+            snippet = ""
+            if code_block:
+                snippet = "".join(ln[1] for ln in code_block[:3] if len(ln) > 1)
 
-        # Extract mode from properties
-        mode = "SIMULATED" if "mode" in check and check["mode"] == "SIMULATED" else "Scan"
+            # Extract mode from properties
+            mode = "SIMULATED" if "mode" in check and check["mode"] == "SIMULATED" else "Scan"
 
-        f = make_finding(
-            idx, f"Checkov ({mode})", "IaC",
-            check_id, title, severity, cvss, cwe, check_id,
-            extra={
-                "affected_file":  file_,
-                "affected_line":  check.get("file_line_range", [None])[0],
-                "code_snippet":   snippet.strip(),
-                "scan_mode": mode
-            }
-        )
-        findings.append(f)
-        idx += 1
+            f = make_finding(
+                idx, f"Checkov ({mode})", "IaC",
+                check_id, title, severity, cvss, cwe, check_id,
+                extra={
+                    "affected_file":  file_,
+                    "affected_line":  check.get("file_line_range", [None])[0],
+                    "code_snippet":   snippet.strip(),
+                    "scan_mode": mode
+                }
+            )
+            findings.append(f)
+            idx += 1
 
     return findings
 
@@ -496,7 +505,122 @@ def parse_gitleaks(data: list, start_idx: int) -> list[dict]:
 
     return findings
 
+def parse_nuclei(path: Path, start_idx: int) -> list[dict]:
+    """Parse Nuclei DAST JSONL → normalized findings."""
+    findings = []
+    idx = start_idx
+    if not path.exists(): return findings
+
+    with open(path, 'r', encoding='utf-8') as f:
+        for line in f:
+            if not line.strip(): continue
+            try:
+                vuln = json.loads(line)
+                info = vuln.get('info', {})
+                tags = info.get('tags', [])
+
+                owasp_cat = "A01:2025 – Broken Access Control"
+                cwe = "CWE-284"
+                if 'xss' in tags:
+                    owasp_cat = "A03:2025 – Injection"
+                    cwe = "CWE-79"
+                elif 'sqli' in tags:
+                    owasp_cat = "A03:2025 – Injection"
+                    cwe = "CWE-89"
+
+                f_obj = make_finding(
+                    idx, "Nuclei", "DAST",
+                    vuln.get('template-id'), info.get('name', 'DAST Finding'),
+                    info.get('severity', 'MEDIUM').upper(),
+                    info.get('cvss-score', 5.0), cwe, vuln.get('template-id'),
+                    extra={
+                        "affected_url": vuln.get('matched-at', 'N/A'),
+                        "dast_request": vuln.get('request', 'N/A'),
+                        "dast_response": vuln.get('response', 'N/A')
+                    }
+                )
+                findings.append(f_obj)
+                idx += 1
+            except: continue
+    return findings
+
+def parse_container(path: Path, start_idx: int) -> list[dict]:
+    """Parse Trivy Image JSON -> normalized findings"""
+    findings = []
+    idx = start_idx
+    data = load_json(path)
+    if not data: return findings
+
+    for result in data.get("Results", []):
+        for vuln in result.get("Vulnerabilities", []):
+            cve_id   = vuln.get("VulnerabilityID", "CVE-UNKNOWN")
+            severity = vuln.get("Severity", "MEDIUM").upper()
+            cvss     = vuln.get("CVSS", {}).get("nvd", {}).get("V3Score", 5.0)
+            cwe_list = vuln.get("CweIDs", ["CWE-119"])
+            cwe      = cwe_list[0] if cwe_list else "CWE-119"
+
+            f = make_finding(
+                idx, "Trivy (Image)", "CONTAINER",
+                cve_id, vuln.get("Title", cve_id)[:120], severity, cvss, cwe, cve_id,
+                extra={"affected_package": vuln.get("PkgName", ""), "installed_version": vuln.get("InstalledVersion", ""), "scan_mode": data.get("Metadata", {}).get("Mode", "Scan")}
+            )
+            findings.append(f)
+            idx += 1
+    return findings
+
+def parse_network(path: Path, start_idx: int) -> list[dict]:
+    findings = []
+    idx = start_idx
+    data = load_json(path)
+    if not data: return findings
+
+    for v in data:
+        f = make_finding(
+            idx, "Nmap/Nessus", "NETWORK",
+            v.get("vulnerability", "Network Vuln"), v.get("vulnerability"),
+            v.get("severity", "MEDIUM"), v.get("cvss_v3", 5.0), v.get("cwe", "CWE-0"), "NETWORK",
+            extra={"affected_url": f"{v.get('host')}:{v.get('port')} ({v.get('service')})"}
+        )
+        findings.append(f)
+        idx += 1
+    return findings
+
+def parse_api(path: Path, start_idx: int) -> list[dict]:
+    findings = []
+    idx = start_idx
+    data = load_json(path)
+    if not data: return findings
+
+    for v in data:
+        f = make_finding(
+            idx, v.get("fuzzer", "API Fuzzer"), "API",
+            v.get("vulnerability", "API Vuln"), v.get("vulnerability"),
+            v.get("severity", "MEDIUM"), v.get("cvss_v3", 5.0), v.get("cwe", "CWE-0"), "API",
+            extra={"affected_url": v.get("endpoint")}
+        )
+        findings.append(f)
+        idx += 1
+    return findings
+
+def parse_manual(path: Path, start_idx: int) -> list[dict]:
+    findings = []
+    idx = start_idx
+    data = load_json(path)
+    if not data: return findings
+
+    for v in data:
+        f = make_finding(
+            idx, v.get("reporter", "Manual Tester"), "MANUAL",
+            v.get("type", "Pentest Finding"), v.get("vulnerability"),
+            v.get("severity", "MEDIUM"), v.get("cvss_v3", 5.0), v.get("cwe", "CWE-0"), "MANUAL",
+            extra={"business_impact": v.get("description", "")}
+        )
+        findings.append(f)
+        idx += 1
+    return findings
+
 # ─────────────────────────────────────────────────────────────
+
 # Console table printer
 # ─────────────────────────────────────────────────────────────
 
@@ -514,7 +638,7 @@ def print_summary_table(findings: list[dict]) -> None:
     print(hdr)
     print(sep)
     for f in findings:
-        sev  = f["severity"]
+        sev  = str(f.get("severity") or "UNKNOWN")
         icon = SEV_ICON.get(sev, "")
         row = "| {:^{}} | {:^{}} | {:<{}} | {:<{}} | {:^{}} |".format(
             f["id"],      col_w[0],
@@ -537,46 +661,79 @@ def main() -> None:
     print("─" * 60)
     print()
 
-    # Load all source reports
-    sast_data = load_json(SAST_FILE)
-    sca_data  = load_json(SCA_FILE)
-    iac_data  = load_json(IAC_FILE)
-    dast_data = load_json(DAST_FILE)
-    secret_data = load_json(SECRET_FILE)
+    # Auto-discover all JSON files in INGEST_DIR
+    if not INGEST_DIR.exists():
+        INGEST_DIR.mkdir(parents=True, exist_ok=True)
+
+    ingest_files = list(INGEST_DIR.glob("*.json"))
+    if not ingest_files:
+        print(f"  [WARN] No JSON files found in {INGEST_DIR}.")
+        print("  System will proceed with empty results.")
 
     all_findings: list[dict] = []
     idx = 1
 
-    # Parse each format
-    if sast_data:
-        sast_findings = parse_sarif(sast_data, idx)
-        print(f"  Parsed SARIF  (sast_results.json) → {len(sast_findings)} finding(s)")
-        all_findings.extend(sast_findings)
-        idx += len(sast_findings)
+    for fpath in ingest_files:
+        filename = fpath.name.lower()
+        data = load_json(fpath)
+        if not data: continue
 
-    if sca_data:
-        sca_findings = parse_trivy(sca_data, idx)
-        print(f"  Parsed Trivy  (sca_results.json)  → {len(sca_findings)} finding(s)")
-        all_findings.extend(sca_findings)
-        idx += len(sca_findings)
+        # Heuristics
+        report_type = "UNKNOWN"
+        if isinstance(data, dict):
+            if "runs" in data and isinstance(data["runs"], list) and len(data["runs"]) > 0:
+                report_type = "SAST"
+            elif data.get("ArtifactType") == "container_image":
+                report_type = "CONTAINER"
+            elif "ArtifactName" in data and "Results" in data:
+                report_type = "SCA"
+            elif "check_type" in data or ("results" in data and isinstance(data["results"], dict) and "failed_checks" in data["results"]):
+                report_type = "IAC"
+            elif "site" in data:
+                report_type = "DAST_ZAP"
+        elif isinstance(data, list) and len(data) > 0:
+            first = data[0]
+            if "fuzzer" in first:
+                report_type = "API"
+            elif "host" in first and "port" in first:
+                report_type = "NETWORK"
+            elif "reporter" in first and "type" in first:
+                report_type = "MANUAL"
+            elif "Description" in first and "Match" in first:
+                report_type = "SECRET"
+            elif "info" in first and "name" in first["info"]:
+                report_type = "NUCLEI"
 
-    if iac_data:
-        iac_findings = parse_checkov(iac_data, idx)
-        print(f"  Parsed Checkov (iac_results.json)  → {len(iac_findings)} finding(s)")
-        all_findings.extend(iac_findings)
-        idx += len(iac_findings)
+        # Fallback to filename prefixes
+        if report_type == "UNKNOWN":
+            if filename.startswith("sast_"): report_type = "SAST"
+            elif filename.startswith("sca_"): report_type = "SCA"
+            elif filename.startswith("iac_"): report_type = "IAC"
+            elif filename.startswith("secret_"): report_type = "SECRET"
+            elif filename.startswith("dast_"): report_type = "DAST_ZAP"
+            elif filename.startswith("nuclei_"): report_type = "NUCLEI"
+            elif filename.startswith("container_"): report_type = "CONTAINER"
+            elif filename.startswith("network_"): report_type = "NETWORK"
+            elif filename.startswith("api_"): report_type = "API"
+            elif filename.startswith("manual_"): report_type = "MANUAL"
 
-    if datalink_data := secret_data:
-        secret_findings = parse_gitleaks(datalink_data, idx)
-        print(f"  Parsed Secrets (secret_results.json) → {len(secret_findings)} finding(s)")
-        all_findings.extend(secret_findings)
-        idx += len(secret_findings)
+        print(f"  Processing: {fpath.name} -> Detected as [{report_type}]")
 
-    if dast_data:
-        dast_findings = parse_zap(dast_data, idx)
-        print(f"  Parsed ZAP    (dast_results.json) → {len(dast_findings)} finding(s)")
-        all_findings.extend(dast_findings)
-        idx += len(dast_findings)
+        findings = []
+        if report_type == "SAST": findings = parse_sarif(data, idx)
+        elif report_type == "SCA": findings = parse_trivy(data, idx)
+        elif report_type == "IAC": findings = parse_checkov(data, idx)
+        elif report_type == "SECRET": findings = parse_gitleaks(data, idx)
+        elif report_type == "DAST_ZAP": findings = parse_zap(data, idx)
+        elif report_type == "NUCLEI": findings = parse_nuclei(fpath, idx) # nuclei parser reads file directly
+        elif report_type == "CONTAINER": findings = parse_container(fpath, idx)
+        elif report_type == "NETWORK": findings = parse_network(fpath, idx)
+        elif report_type == "API": findings = parse_api(fpath, idx)
+        elif report_type == "MANUAL": findings = parse_manual(fpath, idx)
+
+        if findings:
+            all_findings.extend(findings)
+            idx += len(findings)
 
     # Compute severity counts
     by_severity: dict[str, int] = {}
@@ -618,7 +775,7 @@ def main() -> None:
             },
             "pipeline_status": pipeline_status,
             "block_reason":    block_reason,
-            "sbom_generated":  SBOM_FILE.exists(),
+            "sbom_generated":  (ROOT_DIR / "mock-data" / "sbom.json").exists(),
             "aspm_mode":       "2026_RISK_BASED"
         },
         "findings": all_findings,

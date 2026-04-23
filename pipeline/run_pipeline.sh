@@ -67,7 +67,7 @@ run_step() {
     local step_label="$2"
     local script="$3"
 
-    echo -e "${BOLD}[${step_num}/10] ${step_label}${RESET}"
+    echo -e "${BOLD}[${step_num}/11] ${step_label}${RESET}"
     echo -e "${DIM}─────────────────────────────────────────────────────────────${RESET}"
 
     if "${PYTHON}" "${script}"; then
@@ -93,14 +93,25 @@ run_step "5" "IaC Scanning    (Checkov Bridge)"    "scan_iac.py"
 
 run_step "6" "DAST Scanning   (ZAP Bridge)"        "scan_dast.py"
 
+echo -e "${DIM}  [*] Copying scan results to ingestion directory...${RESET}"
+mkdir -p "$SCRIPT_DIR/../ingest"
+cp "$SCRIPT_DIR/../mock-data/"*.json "$SCRIPT_DIR/../ingest/" 2>/dev/null || true
+
 run_step "7" "Consolidating Security Reports"      "report_generator.py"
 
 run_step "8" "Generating AI Triage & Analysis"     "ai_triage_engine.py"
 
 run_step "9" "Generating HTML/PDF Case Study"      "generate_report.py"
 
+run_step "10" "Audit Logging & Traceability"        "audit_logger.py"
+
+# [NEW] Sync findings to Dashboard data folder
+mkdir -p dashboard/data
+cp mock-data/*.json dashboard/data/ 2>/dev/null || true
+echo -e "  ✓ Dashboard data synchronized"
+
 # ─── Policy Gate (may exit 1) ────────────────────────────────────────────────
-echo -e "${BOLD}[10/10] Evaluating Security Policy Gate${RESET}"
+echo -e "${BOLD}[11/11] Evaluating Security Policy Gate${RESET}"
 echo -e "${DIM}─────────────────────────────────────────────────────────────${RESET}"
 
 POLICY_EXIT=0

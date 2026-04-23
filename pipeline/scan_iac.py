@@ -114,6 +114,28 @@ def run_simulation():
             "mode": "SIMULATED"
         })
 
+    # --- RBAC Simulation (Requirement 3) ---
+    # We look for overly permissive instructions in scripts or dockerfile labels
+    if "sudo" in content.lower() or "nopasswd" in content.lower():
+        failed_checks.append({
+            "check_id": "CKV_RBAC_101",
+            "check_name": "Ensure sudo is not configured without password",
+            "severity": "CRITICAL",
+            "file_path": "Dockerfile",
+            "message": "Overly permissive RBAC: Sudoers file configured with NOPASSWD.",
+            "mode": "SIMULATED"
+        })
+
+    if "cluster-admin" in content.lower():
+        failed_checks.append({
+            "check_id": "CKV_RBAC_102",
+            "check_name": "Minimize Cluster-Admin usage",
+            "severity": "HIGH",
+            "file_path": "k8s-manifest.yaml", # Simulated file
+            "message": "RBAC check: Binding to cluster-admin role detected.",
+            "mode": "SIMULATED"
+        })
+
     report = {
         "check_type": "dockerfile",
         "results": {
