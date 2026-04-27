@@ -29,14 +29,20 @@ This repo covers Task 1, Task 2, Task 3, Task 4, and Task 5.
 
 ## Real Tools vs Fallback Logic
 
-The framework prefers real scanners:
-
 - SAST: `semgrep`
 - SCA and image/dependency scan: `trivy`
 - Secrets: `gitleaks`
 - IaC: `checkov`
 - DAST: `nuclei`
 - SBOM: `syft`
+- AI Triage: `Groq (Llama-3.3)` with deep context analysis.
+
+## Key Features & Enhancements
+
+- **Dynamic Security Score**: Real-time numerical risk assessment (0-100) based on vulnerability density and severity.
+- **Enterprise Report Center**: Automated, professional security assessment preview with executive summary and top risk analysis.
+- **AI-Powered Contextual Triage**: Eliminates false positives by analyzing code context surrounding detected vulnerabilities.
+- **Glassmorphism Dashboard**: A modern, high-contrast "Single Pane of Glass" for CISO-level visibility.
 
 For portability, some stages support controlled fallback behavior:
 
