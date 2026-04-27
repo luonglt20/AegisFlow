@@ -4,14 +4,14 @@ pipeline/policy_engine.py
 ─────────────────────────────────────────────────────────────────────────────
 Security policy gate for DevSecOps pipeline.
 
-Input  : ../mock-data/full_report.json
-Output : ../mock-data/policy_result.json
+Input  : ../security-results/full_report.json
+Output : ../security-results/policy_result.json
 Exit   : 0 = PASSED/WARNING  |  1 = BLOCKED
 
 Policy rules:
   CRITICAL > 0       → BLOCKED  (exit 1)
-  HIGH >= 5          → BLOCKED  (exit 1)
-  Risk Weight > 100  → WARNING  (exit 0)
+  HIGH >= 2          → BLOCKED  (exit 1)
+  Risk Weight > 50   → WARNING  (exit 0)
   else               → PASSED   (exit 0)
 """
 
@@ -26,8 +26,8 @@ import os
 # ─────────────────────────────────────────────────────────────
 SCRIPT_DIR   = Path(__file__).parent.resolve()
 ROOT_DIR     = SCRIPT_DIR.parent
-REPORT_FILE  = Path(os.environ.get("TRIAGED_REPORT", ROOT_DIR / "mock-data" / "full_report_triaged.json"))
-OUTPUT_FILE  = Path(os.environ.get("POLICY_OUTPUT", ROOT_DIR / "mock-data" / "policy_result.json"))
+REPORT_FILE  = Path(os.environ.get("TRIAGED_REPORT", ROOT_DIR / "security-results" / "full_report_triaged.json"))
+OUTPUT_FILE  = Path(os.environ.get("POLICY_OUTPUT", ROOT_DIR / "security-results" / "policy_result.json"))
 
 # ─────────────────────────────────────────────────────────────
 # ANSI color codes
@@ -244,7 +244,11 @@ def evaluate_policy(findings: list[dict]) -> tuple[str, str, int, dict]:
         status = "BLOCKED"
         reason = f"Policy Violated: {crit} CRITICAL findings detected."
         exit_code = 1
-    elif high >= 5 or total_risk_weight > 100:
+    elif high >= 2:
+        status = "BLOCKED"
+        reason = f"Policy Violated: {high} HIGH findings detected (Threshold: 2)."
+        exit_code = 1
+    elif total_risk_weight > 50:
         status = "WARNING"
         reason = f"High Risk Momentum: Total risk weight ({total_risk_weight}) exceeds threshold."
         exit_code = 0

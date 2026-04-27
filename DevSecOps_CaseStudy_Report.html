@@ -1,144 +1,36 @@
-#!/usr/bin/env python3
-"""
-Generate the case-study HTML report and keep it aligned with the actual
-implementation in this repository.
-"""
-
-import html
-import json
-from pathlib import Path
-
-ROOT_DIR = Path(__file__).parent.parent.resolve()
-HTML_FILE = ROOT_DIR / "DevSecOps_CaseStudy_Report.html"
-
-
-def load_json(path: Path, default):
-    if not path.exists():
-        return default
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return default
-
-
-def escape(value):
-    return html.escape(str(value))
-
-
-def summarize_counts(findings):
-    counts = {"CRITICAL": 0, "HIGH": 0, "MEDIUM": 0, "LOW": 0}
-    by_scan_type = {}
-    for finding in findings:
-        sev = (finding.get("severity") or "").upper()
-        if sev in counts:
-            counts[sev] += 1
-        scan_type = finding.get("scan_type", "OTHER")
-        if str(scan_type).upper() == "IAC":
-            scan_type = "IaC"
-        by_scan_type[scan_type] = by_scan_type.get(scan_type, 0) + 1
-    return counts, by_scan_type
-
-
-def find_first(findings, scan_type):
-    for finding in findings:
-        if finding.get("scan_type") == scan_type:
-            return finding
-    return None
-
-
-def format_location(finding):
-    if not finding:
-        return "N/A"
-    file_path = finding.get("affected_file") or finding.get("affected_url") or "N/A"
-    line = finding.get("affected_line")
-    if line not in (None, 0, "0"):
-        return f"{file_path}:{line}"
-    return str(file_path)
-
-
-def finding_row(label, finding):
-    if not finding:
-        return f"<tr><td>{escape(label)}</td><td colspan='4'>No example available in current report.</td></tr>"
-    return (
-        f"<tr>"
-        f"<td>{escape(label)}</td>"
-        f"<td>{escape(finding.get('source_tool', '-'))}</td>"
-        f"<td>{escape(finding.get('severity', '-'))}</td>"
-        f"<td>{escape(finding.get('title', '-'))}</td>"
-        f"<td>{escape(format_location(finding))}</td>"
-        f"</tr>"
-    )
-
-
-def list_items(items):
-    return "".join(f"<li>{item}</li>" for item in items)
-
-
-def main():
-    triaged = load_json(ROOT_DIR / "security-results" / "full_report_triaged.json", {})
-    full_report = triaged or load_json(ROOT_DIR / "security-results" / "full_report.json", {})
-    policy = load_json(ROOT_DIR / "security-results" / "policy_result.json", {})
-    build_report = load_json(ROOT_DIR / "security-results" / "build_report.json", {})
-    test_report = load_json(ROOT_DIR / "security-results" / "test_report.json", {})
-    sbom = load_json(ROOT_DIR / "security-results" / "sbom.json", {})
-
-    findings = full_report.get("findings", [])
-    meta = full_report.get("scan_metadata", {})
-    counts, by_scan_type = summarize_counts(findings)
-    by_scan_type = meta.get("by_scan_type", by_scan_type) or by_scan_type
-
-    app_name = meta.get("app_name", "Selected target")
-    run_id = meta.get("pipeline_run_id", "N/A")
-    scan_date = meta.get("scan_timestamp", meta.get("generated_at", meta.get("scan_date", "N/A")))
-    pipeline_status = policy.get("pipeline_status", meta.get("pipeline_status", full_report.get("pipeline_status", "UNKNOWN")))
-    block_reason = policy.get("block_reason", meta.get("block_reason", full_report.get("block_reason", "See findings summary")))
-    tools_used = ", ".join(meta.get("tools_used", [])) or "Semgrep, Trivy, Gitleaks, Checkov, Nuclei, Syft"
-    sbom_components = len(sbom.get("components", [])) if isinstance(sbom, dict) else 0
-
-    secret_example = find_first(findings, "SECRET")
-    sast_example = find_first(findings, "SAST")
-    sca_example = find_first(findings, "SCA")
-    iac_example = find_first(findings, "IAC")
-    dast_example = find_first(findings, "DAST")
-    dast_runtime = "Nuclei"
-    dast_artifact_model = dast_example.get("source_tool", "OWASP ZAP style report") if dast_example else "OWASP ZAP style report"
-
-    build_mode = build_report.get("mode", "unknown")
-    test_mode = test_report.get("mode", "unknown")
-
-    html_report = f"""<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>DevSecOps Case Study Report</title>
   <style>
-    @page {{ size: A4; margin: 14mm; }}
-    body {{ font-family: Arial, sans-serif; color: #1f2937; font-size: 10.5pt; line-height: 1.42; }}
-    .page {{ page-break-after: always; min-height: 250mm; }}
-    .page:last-child {{ page-break-after: auto; }}
-    h1, h2, h3 {{ color: #0f172a; margin-bottom: 8px; }}
-    h1 {{ font-size: 23pt; margin-top: 0; }}
-    h2 {{ font-size: 15pt; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-top: 18px; }}
-    h3 {{ font-size: 11.5pt; margin-top: 14px; }}
-    p, li {{ margin-top: 5px; margin-bottom: 5px; }}
-    ul, ol {{ padding-left: 18px; }}
-    .meta, .footer {{ display: flex; justify-content: space-between; color: #475569; font-size: 8.5pt; }}
-    .footer {{ border-top: 1px solid #cbd5e1; margin-top: 12px; padding-top: 6px; }}
-    .hero {{ background: #f8fafc; border: 1px solid #cbd5e1; padding: 14px; border-radius: 8px; }}
-    .grid {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0; }}
-    .card {{ border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; background: #ffffff; }}
-    .value {{ font-size: 17pt; font-weight: bold; color: #2563eb; }}
-    .small {{ font-size: 9pt; color: #475569; }}
-    table {{ width: 100%; border-collapse: collapse; margin-top: 8px; }}
-    th, td {{ border: 1px solid #cbd5e1; padding: 7px; vertical-align: top; text-align: left; font-size: 9.4pt; }}
-    th {{ background: #e2e8f0; }}
-    code, pre {{ font-family: "Courier New", monospace; }}
-    pre {{ background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; white-space: pre-wrap; font-size: 8.7pt; }}
-    .pill {{ display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 8.5pt; font-weight: bold; color: white; }}
-    .critical {{ background: #b91c1c; }}
-    .high {{ background: #c2410c; }}
-    .medium {{ background: #a16207; }}
-    .low {{ background: #15803d; }}
+    @page { size: A4; margin: 14mm; }
+    body { font-family: Arial, sans-serif; color: #1f2937; font-size: 10.5pt; line-height: 1.42; }
+    .page { page-break-after: always; min-height: 250mm; }
+    .page:last-child { page-break-after: auto; }
+    h1, h2, h3 { color: #0f172a; margin-bottom: 8px; }
+    h1 { font-size: 23pt; margin-top: 0; }
+    h2 { font-size: 15pt; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; margin-top: 18px; }
+    h3 { font-size: 11.5pt; margin-top: 14px; }
+    p, li { margin-top: 5px; margin-bottom: 5px; }
+    ul, ol { padding-left: 18px; }
+    .meta, .footer { display: flex; justify-content: space-between; color: #475569; font-size: 8.5pt; }
+    .footer { border-top: 1px solid #cbd5e1; margin-top: 12px; padding-top: 6px; }
+    .hero { background: #f8fafc; border: 1px solid #cbd5e1; padding: 14px; border-radius: 8px; }
+    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0; }
+    .card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; background: #ffffff; }
+    .value { font-size: 17pt; font-weight: bold; color: #2563eb; }
+    .small { font-size: 9pt; color: #475569; }
+    table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    th, td { border: 1px solid #cbd5e1; padding: 7px; vertical-align: top; text-align: left; font-size: 9.4pt; }
+    th { background: #e2e8f0; }
+    code, pre { font-family: "Courier New", monospace; }
+    pre { background: #f8fafc; border: 1px solid #cbd5e1; padding: 10px; white-space: pre-wrap; font-size: 8.7pt; }
+    .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 8.5pt; font-weight: bold; color: white; }
+    .critical { background: #b91c1c; }
+    .high { background: #c2410c; }
+    .medium { background: #a16207; }
+    .low { background: #15803d; }
   </style>
 </head>
 <body>
@@ -147,14 +39,14 @@ def main():
     <h1>AegisFlow DevSecOps Framework</h1>
     <div class="hero">
       <p><strong>Mục tiêu của repo:</strong> nộp một bài test DevSecOps/AppSec dùng đúng một repository, một môi trường Docker Compose, một pipeline và một bộ report để chứng minh cách tích hợp security vào CI/CD local.</p>
-      <p><strong>Trạng thái run hiện tại:</strong> target được scan là <strong>{escape(app_name)}</strong>, run id <code>{escape(run_id)}</code>, trạng thái policy là <strong>{escape(pipeline_status)}</strong>.</p>
+      <p><strong>Trạng thái run hiện tại:</strong> target được scan là <strong>juice-shop</strong>, run id <code>pipeline-run-20260427184234</code>, trạng thái policy là <strong>BLOCKED</strong>.</p>
     </div>
 
     <div class="grid">
       <div class="card"><div class="value">5</div><div>Tasks Documented</div></div>
-      <div class="card"><div class="value">{len(findings)}</div><div>Total Findings</div></div>
-      <div class="card"><div class="value">{counts["CRITICAL"]}</div><div>Critical</div></div>
-      <div class="card"><div class="value">{sbom_components}</div><div>SBOM Components</div></div>
+      <div class="card"><div class="value">118</div><div>Total Findings</div></div>
+      <div class="card"><div class="value">50</div><div>Critical</div></div>
+      <div class="card"><div class="value">64</div><div>SBOM Components</div></div>
     </div>
 
     <h2>Requirement to Evidence Mapping</h2>
@@ -190,9 +82,9 @@ def main():
     </ol>
 
     <h2>Kiến trúc và Toolchain</h2>
-    <p>Dashboard UI gọi <code>POST /api/scan</code> vào <code>server.py</code>, server này chạy <code>pipeline/run_pipeline.sh</code> ở background thread, sinh JSON vào <code>security-results/</code>, sau đó đồng bộ sang <code>dashboard/data/</code> để frontend đọc. Toolchain trong artifact hiện tại là: {escape(tools_used)}. Với DAST, runtime scanner trong repo là <strong>{escape(dast_runtime)}</strong>, còn report hợp nhất hiện đang được normalize theo model artifact <strong>{escape(dast_artifact_model)}</strong>.</p>
+    <p>Dashboard UI gọi <code>POST /api/scan</code> vào <code>server.py</code>, server này chạy <code>pipeline/run_pipeline.sh</code> ở background thread, sinh JSON vào <code>security-results/</code>, sau đó đồng bộ sang <code>dashboard/data/</code> để frontend đọc. Toolchain trong artifact hiện tại là: Semgrep 1.68.0, Trivy 0.50.0, Checkov 3.2.0, Gitleaks 8.16.x, Nuclei 3.x. Với DAST, runtime scanner trong repo là <strong>Nuclei</strong>, còn report hợp nhất hiện đang được normalize theo model artifact <strong>OWASP ZAP (Scan)</strong>.</p>
 
-    <div class="footer"><span>Run ID: {escape(run_id)}</span><span>Scan date: {escape(scan_date)}</span></div>
+    <div class="footer"><span>Run ID: pipeline-run-20260427184234</span><span>Scan date: 2026-04-27T18:42:34Z</span></div>
   </div>
 
   <div class="page">
@@ -205,11 +97,7 @@ def main():
 
     <h3>Vì sao chọn Semgrep cho SAST</h3>
     <ul>
-      {list_items([
-        "Cài đặt nhanh trong container Python, phù hợp bài toán local demo bằng Docker Compose.",
-        "Hỗ trợ nhiều ngôn ngữ trong cùng repo, quan trọng vì repo chứa Node.js, Python, PHP và các sample app khác nhau.",
-        "Xuất SARIF/JSON dễ parse để hợp nhất vào full report và policy gate."
-      ])}
+      <li>Cài đặt nhanh trong container Python, phù hợp bài toán local demo bằng Docker Compose.</li><li>Hỗ trợ nhiều ngôn ngữ trong cùng repo, quan trọng vì repo chứa Node.js, Python, PHP và các sample app khác nhau.</li><li>Xuất SARIF/JSON dễ parse để hợp nhất vào full report và policy gate.</li>
     </ul>
 
     <h3>Stage chạy SAST và lý do</h3>
@@ -219,8 +107,8 @@ def main():
     <table>
       <thead><tr><th>Stage</th><th>Chế độ hiện tại</th><th>Giả lập gì</th><th>Giới hạn</th></tr></thead>
       <tbody>
-        <tr><td>Build</td><td>{escape(build_mode)}</td><td>Nếu target không có build portable an toàn, framework chỉ ghi nhận structural validation thay vì build image/application đầy đủ.</td><td>Không chứng minh được ứng dụng target có build thành công như production CI runner.</td></tr>
-        <tr><td>Test</td><td>{escape(test_mode)}</td><td>Node.js target được validate manifest thay vì chạy full test suite, để tránh phụ thuộc dependency cache và lệnh test khác nhau giữa các app mẫu.</td><td>Không thay thế được unit/integration test thật của từng ứng dụng.</td></tr>
+        <tr><td>Build</td><td>real</td><td>Nếu target không có build portable an toàn, framework chỉ ghi nhận structural validation thay vì build image/application đầy đủ.</td><td>Không chứng minh được ứng dụng target có build thành công như production CI runner.</td></tr>
+        <tr><td>Test</td><td>validation</td><td>Node.js target được validate manifest thay vì chạy full test suite, để tránh phụ thuộc dependency cache và lệnh test khác nhau giữa các app mẫu.</td><td>Không thay thế được unit/integration test thật của từng ứng dụng.</td></tr>
       </tbody>
     </table>
 
@@ -238,7 +126,7 @@ def main():
     <table>
       <thead><tr><th>Loại</th><th>Tool</th><th>Severity</th><th>Finding</th><th>Location</th></tr></thead>
       <tbody>
-        {finding_row("SAST example", sast_example)}
+        <tr><td>SAST example</td><td>Semgrep (Scan)</td><td>MEDIUM</td><td>Semgrep Finding: javascript.sequelize.security.audit.sequelize-injection-express.express-sequelize-injection</td><td>/app/real-apps/juice-shop/data/static/codefixes/dbSchemaChallenge_1.ts:5</td></tr>
       </tbody>
     </table>
 
@@ -251,10 +139,10 @@ def main():
     <p>Repo hiện tại thực hiện cả 4 nhóm scan liên quan đến Task 2: SCA bằng Trivy, IaC bằng Checkov, secrets bằng Gitleaks và SBOM bằng Syft/CycloneDX. DAST được bổ sung để kiểm chứng runtime, nhưng phần quan trọng cần chấm ở đây vẫn là dependency, secrets và IaC/container posture.</p>
 
     <div class="grid">
-      <div class="card"><div class="value">{by_scan_type.get("SCA", 0)}</div><div>SCA</div></div>
-      <div class="card"><div class="value">{by_scan_type.get("IaC", by_scan_type.get("IAC", 0))}</div><div>IaC</div></div>
-      <div class="card"><div class="value">{by_scan_type.get("SECRET", 0)}</div><div>Secrets</div></div>
-      <div class="card"><div class="value">{by_scan_type.get("DAST", 0)}</div><div>DAST</div></div>
+      <div class="card"><div class="value">0</div><div>SCA</div></div>
+      <div class="card"><div class="value">29</div><div>IaC</div></div>
+      <div class="card"><div class="value">50</div><div>Secrets</div></div>
+      <div class="card"><div class="value">1</div><div>DAST</div></div>
     </div>
 
     <h3>Phân biệt loại vấn đề</h3>
@@ -269,12 +157,7 @@ def main():
 
     <h3>Tool chọn và lý do</h3>
     <ul>
-      {list_items([
-        "Trivy: một công cụ duy nhất có thể phục vụ dependency/container use case, dễ đóng gói trong local Docker flow.",
-        "Checkov: scan IaC và Dockerfile nhanh, output JSON dễ hợp nhất vào report.",
-        "Gitleaks: rất phù hợp để bắt hardcoded secret trong repo mẫu dễ tổn thương.",
-        "Syft: xuất SBOM CycloneDX chuẩn hơn so với tự dựng thủ công."
-      ])}
+      <li>Trivy: một công cụ duy nhất có thể phục vụ dependency/container use case, dễ đóng gói trong local Docker flow.</li><li>Checkov: scan IaC và Dockerfile nhanh, output JSON dễ hợp nhất vào report.</li><li>Gitleaks: rất phù hợp để bắt hardcoded secret trong repo mẫu dễ tổn thương.</li><li>Syft: xuất SBOM CycloneDX chuẩn hơn so với tự dựng thủ công.</li>
     </ul>
 
     <h3>Giả lập và giới hạn</h3>
@@ -290,10 +173,10 @@ def main():
     <table>
       <thead><tr><th>Loại</th><th>Tool</th><th>Severity</th><th>Finding</th><th>Location</th></tr></thead>
       <tbody>
-        {finding_row("Secret", secret_example)}
-        {finding_row("SCA", sca_example)}
-        {finding_row("IaC", iac_example)}
-        {finding_row("DAST", dast_example)}
+        <tr><td>Secret</td><td>Gitleaks (Scan)</td><td>CRITICAL</td><td>Hardcoded Secret: Detected a Generic API Key, potentially exposing access to various services and sensitive operations.</td><td>data/static/users.yml:88</td></tr>
+        <tr><td>SCA</td><td colspan='4'>No example available in current report.</td></tr>
+        <tr><td>IaC</td><td colspan='4'>No example available in current report.</td></tr>
+        <tr><td>DAST</td><td>OWASP ZAP (Scan)</td><td>LOW</td><td>Unknown</td><td>N/A</td></tr>
       </tbody>
     </table>
 
@@ -303,7 +186,7 @@ def main():
   <div class="page">
     <div class="meta"><span>AegisFlow Case Study Report</span><span>Page 4 / 5</span></div>
     <h2>Task 3 – Policy Enforcement & Security Governance</h2>
-    <p>Scenario bắt buộc của đề bài được đáp ứng và còn vượt ngưỡng: run hiện tại có <strong>{counts["CRITICAL"]} Critical</strong>, <strong>{counts["HIGH"]} High</strong>, <strong>{counts["MEDIUM"]} Medium</strong>, <strong>{counts["LOW"]} Low</strong>. Vì vậy pipeline kết thúc ở trạng thái <strong>{escape(pipeline_status)}</strong> với lý do: {escape(block_reason)}.</p>
+    <p>Scenario bắt buộc của đề bài được đáp ứng và còn vượt ngưỡng: run hiện tại có <strong>50 Critical</strong>, <strong>0 High</strong>, <strong>67 Medium</strong>, <strong>1 Low</strong>. Vì vậy pipeline kết thúc ở trạng thái <strong>BLOCKED</strong> với lý do: Policy Violated: 50 CRITICAL findings detected..</p>
 
     <h3>Logic policy</h3>
     <pre>If CRITICAL > 0: BLOCK
@@ -322,12 +205,7 @@ Else: PASS</pre>
 
     <h3>Quy trình xử lý và SLA</h3>
     <ul>
-      {list_items([
-        "Owner chính là team phát triển của ứng dụng được scan; security team giữ vai trò gatekeeper và reviewer.",
-        "Critical: xử lý trong 24 giờ ở policy layer, AI triage hiện tại còn dùng deadline ngắn hơn cho dashboard.",
-        "High: xử lý trong 72 giờ theo policy.",
-        "Product/Engineering manager cần được thông báo khi pipeline bị block để quyết định release hold, exception hoặc hotfix window."
-      ])}
+      <li>Owner chính là team phát triển của ứng dụng được scan; security team giữ vai trò gatekeeper và reviewer.</li><li>Critical: xử lý trong 24 giờ ở policy layer, AI triage hiện tại còn dùng deadline ngắn hơn cho dashboard.</li><li>High: xử lý trong 72 giờ theo policy.</li><li>Product/Engineering manager cần được thông báo khi pipeline bị block để quyết định release hold, exception hoặc hotfix window.</li>
     </ul>
 
     <h3>Exception và approval</h3>
@@ -381,11 +259,3 @@ Else: PASS</pre>
   </div>
 </body>
 </html>
-"""
-
-    HTML_FILE.write_text(html_report, encoding="utf-8")
-    print(f"[+] Report generated: {HTML_FILE}")
-
-
-if __name__ == "__main__":
-    main()

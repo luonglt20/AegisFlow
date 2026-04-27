@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 
 # 1. Setup paths
 $RootPath = (Get-Item .).FullName
-$MockDataPath = Join-Path $RootPath "mock-data"
+$MockDataPath = Join-Path $RootPath "security-results"
 $BinPath = Join-Path $RootPath "pipeline\.bin"
 If (!(Test-Path $BinPath)) { New-Item -ItemType Directory -Path $BinPath | Out-Null }
 

@@ -1,117 +1,105 @@
 #!/usr/bin/env python3
-"""
-pipeline/scan_dast.py
-─────────────────────────────────────────────────────────────────────────────
-Hybrid DAST Bridge:
-  • PRODUCTION:  Runs 'zap-baseline.py' or 'zap-cli' if available.
-  • SIMULATION:  Falls back to high-fidelity ZAP-format report demo.
-
-Output: ZAP JSON format in mock-data/dast_results.json
-"""
-
 import json
 import os
-import sys
-import shutil
 import subprocess
-from datetime import datetime, timezone
 from pathlib import Path
 
-# ─────────────────────────────────────────────────────────────
-# Config
-# ─────────────────────────────────────────────────────────────
-SCRIPT_DIR  = Path(__file__).parent.resolve()
-ROOT_DIR    = SCRIPT_DIR.parent
-OUTPUT_FILE = ROOT_DIR / "mock-data" / "dast_results.json"
-TARGET_URL  = os.environ.get("APP_URL", "http://localhost:53000")
+ROOT_DIR = Path(__file__).parent.parent.resolve()
+OUTPUT_FILE = ROOT_DIR / "security-results" / "dast_results.json"
+SCAN_TARGET = str(os.environ.get("SCAN_TARGET", "")).strip()
+TARGET_URL = str(os.environ.get("TARGET_URL", "")).strip()
+DAST_MODE = str(os.environ.get("DAST_MODE", "LIVE")).strip().upper()
 
-# ─────────────────────────────────────────────────────────────
-# Real Tool Integration
-# ─────────────────────────────────────────────────────────────
 
-def run_real_scan() -> bool:
-    # Look for ZAP baseline script (common in Docker/CI) or zap-cli
-    zap_script = shutil.which("zap-baseline.py") or shutil.which("zap-cli")
-    if not zap_script:
-        return False
+def infer_target_url(scan_target):
+    normalized = scan_target.replace("\\", "/").lower()
+    if "juice-shop" in normalized:
+        return "http://juice-shop:3000"
+    return ""
 
-    print(f"  [PRODUCTION] Found ZAP tool at {zap_script}. Attempting scan of {TARGET_URL}...")
 
-    try:
-        # Note: In a real CI, the app must be running.
-        # We'll try to run but it might fail if URL is down.
-        if "zap-baseline" in zap_script:
-            cmd = [zap_script, "-t", TARGET_URL, "-J", str(OUTPUT_FILE)]
-        else:
-            cmd = ["zap-cli", "quick-scan", "--self-contained", "--start-options", "-config api.disablekey=true", TARGET_URL]
-            # zap-cli might need more steps to output JSON, this is simplified
+def resolve_scan_context():
+    global TARGET_URL, DAST_MODE
 
-        result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if not TARGET_URL:
+        TARGET_URL = infer_target_url(SCAN_TARGET)
 
-        if OUTPUT_FILE.exists():
-            print(f"  ✓ PRODUCTION Scan Complete (Real ZAP results saved)")
-            return True
-        else:
-            print(f"  [WARN] ZAP ran but no output file found. {result.stderr[:200]}")
+    if TARGET_URL:
+        DAST_MODE = "LIVE"
+    else:
+        DAST_MODE = "PREDICTIVE"
 
-    except Exception as e:
-        print(f"  [ERROR] Exception during real scan: {e}")
 
-    return False
+def write_results(results, target_url):
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_FILE.write_text(json.dumps({
+        "site": [{"alerts": results}],
+        "scan_metadata": {
+            "mode": DAST_MODE,
+            "scan_target": SCAN_TARGET,
+            "target_url": target_url
+        }
+    }, indent=2), encoding="utf-8")
 
-# ─────────────────────────────────────────────────────────────
-# Simulation Logic
-# ─────────────────────────────────────────────────────────────
 
-def run_simulation():
-    print("  [SIMULATION] ZAP not found or target unreachable. Generating demo report...")
+def build_predictive_fallback():
+    print("  [!] No live target URL for the selected app. Skipping live DAST to avoid scanning the wrong application.")
+    print("  [*] DAST result will be recorded as an empty predictive placeholder for this run.")
+    write_results([], "")
 
-    now = datetime.now(timezone.utc)
-    ts = now.strftime("%a, %d %b %Y %H:%M:%S")
 
-    report = {
-        "@version": "2.14.0",
-        "@generated": ts,
-        "site": [{
-            "@name": TARGET_URL,
-            "@host": "localhost",
-            "alerts": [
-                {
-                    "pluginid": "40012",
-                    "alert": "Cross Site Scripting (Reflected)",
-                    "riskcode": "3",
-                    "riskdesc": "High",
-                    "desc": "XSS detected in search parameter.",
-                    "instances": [{"uri": f"{TARGET_URL}/api/search?q=<script>alert(1)</script>"}],
-                    "mode": "SIMULATED"
-                },
-                {
-                    "pluginid": "10011",
-                    "alert": "Cookie Without Secure Flag",
-                    "riskcode": "2",
-                    "riskdesc": "Medium",
-                    "desc": "Session cookie missing Secure attribute.",
-                    "instances": [{"uri": f"{TARGET_URL}/api/login"}],
-                    "mode": "SIMULATED"
-                }
-            ]
-        }]
+def normalize_finding(finding):
+    info = finding.get("info", {})
+    return {
+        "id": f"DAST-{finding.get('template-id')}",
+        "source_tool": "Nuclei",
+        "scan_type": "DAST",
+        "title": info.get("name"),
+        "severity": info.get("severity", "MEDIUM").upper(),
+        "affected_url": finding.get("matched-at"),
+        "business_impact": info.get("description", "Potential vulnerability detected in live application."),
+        "remediation_hint": info.get("remediation", "Follow OWASP best practices for this vulnerability type."),
+        "cvss_v3": 7.5,
+        "status": "PENDING_TRIAGE"
     }
 
-    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_FILE.write_text(json.dumps(report, indent=2))
-    print(f"  ✓ SIMULATION Scan Complete: 2 findings generated for demonstration.")
+
+def run_live_scan():
+    print("  [*] Running Nuclei vulnerability scan...")
+    print(f"  [*] Target URL: {TARGET_URL}")
+    cmd = ["nuclei", "-u", TARGET_URL, "-tags", "xss,sqli,lfi,rce", "-jsonl", "-o", str(OUTPUT_FILE)]
+
+    subprocess.run(cmd, check=False)
+
+    results = []
+    if OUTPUT_FILE.exists():
+        with open(OUTPUT_FILE, "r", encoding="utf-8") as f:
+            for line in f:
+                try:
+                    results.append(normalize_finding(json.loads(line)))
+                except Exception:
+                    continue
+
+    write_results(results, TARGET_URL)
+    print(f"  [+] Real DAST Scan completed. Found {len(results)} vulnerabilities.")
+
 
 def main():
-    print("─" * 60)
-    print("  DAST SCANNER BRIDGE (OWASP ZAP)")
-    print("─" * 60)
+    resolve_scan_context()
+    print("  🚀 NUCLEI REAL-TIME DAST ENGINE")
+    print(f"  [*] Mode: {DAST_MODE}")
+    print(f"  [*] Source Target: {SCAN_TARGET or 'N/A'}")
 
-    if not run_real_scan():
-        run_simulation()
+    if DAST_MODE != "LIVE":
+        build_predictive_fallback()
+        return
 
-    print(f"  → Report: {OUTPUT_FILE.relative_to(ROOT_DIR)}")
-    print()
+    try:
+        run_live_scan()
+    except Exception as e:
+        print(f"  [!] Error running real DAST: {e}")
+        write_results([], TARGET_URL)
+
 
 if __name__ == "__main__":
     main()

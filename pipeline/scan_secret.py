@@ -1,108 +1,68 @@
 #!/usr/bin/env python3
 """
-pipeline/scan_secret.py
+pipeline/scan_secret.py - REAL MODE
 ─────────────────────────────────────────────────────────────────────────────
-Hybrid Secret Scanner Bridge:
-  • PRODUCTION:  Runs 'gitleaks' CLI if available.
-  • SIMULATION:  Falls back to demo results based on repo scan simulation.
-
-Output: Gitleaks JSON format in mock-data/secret_results.json
+Runs REAL Gitleaks scan against the target application to find hardcoded secrets.
 """
 
 import json
 import os
 import sys
-import shutil
 import subprocess
-from datetime import datetime, timezone
+import shutil
 from pathlib import Path
 
-# ─────────────────────────────────────────────────────────────
-# Config
-# ─────────────────────────────────────────────────────────────
-SCRIPT_DIR  = Path(__file__).parent.resolve()
-ROOT_DIR    = SCRIPT_DIR.parent
-APP_DIR     = ROOT_DIR / "vulnerable-app"
-OUTPUT_FILE = ROOT_DIR / "mock-data" / "secret_results.json"
+SCRIPT_DIR   = Path(__file__).parent.resolve()
+ROOT_DIR     = SCRIPT_DIR.parent
+TARGET_DIR   = Path(os.environ.get("SCAN_TARGET", ROOT_DIR / "_target_required_"))
+OUTPUT_FILE  = ROOT_DIR / "security-results" / "secret_results.json"
 
-# ─────────────────────────────────────────────────────────────
-# Real Tool Integration
-# ─────────────────────────────────────────────────────────────
-
-def run_real_scan() -> bool:
+def run_real_scan():
+    # Find gitleaks - installed in Docker (/usr/local/bin/gitleaks)
     gitleaks_path = shutil.which("gitleaks")
-    if not gitleaks_path:
-        return False
 
-    print(f"  [PRODUCTION] Found 'gitleaks' at {gitleaks_path}. Running secret detection...")
+    if not gitleaks_path:
+        print("  [ERROR] Gitleaks not found in PATH. Is it installed in Docker?")
+        sys.exit(1)
+
+    print(f"  [REAL-MODE] Running Gitleaks on: {TARGET_DIR}")
 
     try:
-        # scan the project
+        # gitleaks detect --source path --report-path output.json
         cmd = [
-            "gitleaks", "detect",
-            "--source", str(ROOT_DIR),
+            gitleaks_path, "detect",
+            "--source", str(TARGET_DIR),
             "--report-path", str(OUTPUT_FILE),
             "--report-format", "json",
-            "--redact" # prevent leaking real secrets in case study
+            "--exit-code", "0" # Don't fail the script just because secrets are found
         ]
+
+        # If it's not a git repo, we might need --no-git
+        if not (TARGET_DIR / ".git").exists():
+            cmd.append("--no-git")
 
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
-        # Gitleaks exits 1 if findings are found
-        if result.returncode in [0, 1] and OUTPUT_FILE.exists():
-            print(f"  ✓ PRODUCTION Scan Complete (Real Gitleaks results saved)")
-            return True
+        if OUTPUT_FILE.exists():
+            print(f"  ✓ Secret Scan Complete. Results: {OUTPUT_FILE.name}")
+        elif "no leaks found" in result.stdout.lower() or "no leaks found" in result.stderr.lower():
+            # Create an empty list if no leaks found
+            OUTPUT_FILE.write_text("[]", encoding="utf-8")
+            print(f"  ✓ Secret Scan Complete: No leaks found.")
         else:
-            print(f"  [ERROR] Gitleaks failed: {result.stderr[:200]}")
+            print(f"  [ERROR] Gitleaks failed. Stderr: {result.stderr}")
+            # Ensure file exists even if empty
+            OUTPUT_FILE.write_text("[]", encoding="utf-8")
 
     except Exception as e:
-        print(f"  [ERROR] Exception during real scan: {e}")
-
-    return False
-
-# ─────────────────────────────────────────────────────────────
-# Simulation Logic
-# ─────────────────────────────────────────────────────────────
-
-def run_simulation():
-    print("  [SIMULATION] Gitleaks not found. Simulating secret scanning...")
-
-    # Static mock findings for demonstration
-    findings = [
-        {
-            "Description": "Generic API Key",
-            "File": "vulnerable-app/src/config/aws.js",
-            "RuleID": "aws-access-token",
-            "Match": "AKIAIOSFODNN7EXAMPLE",
-            "Secret": "AKIAIOSFODNN7EXAMPLE",
-            "StartLine": 12,
-            "mode": "SIMULATED"
-        },
-        {
-            "Description": "Private Key",
-            "File": "vulnerable-app/certs/jwt-private.pem",
-            "RuleID": "private-key",
-            "Match": "-----BEGIN PRIVATE KEY-----",
-            "Secret": "-----BEGIN PRIVATE KEY-----",
-            "StartLine": 1,
-            "mode": "SIMULATED"
-        }
-    ]
-
-    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_FILE.write_text(json.dumps(findings, indent=2))
-    print(f"  ✓ SIMULATION Scan Complete: {len(findings)} secrets detected.")
+        print(f"  [ERROR] Gitleaks failed: {e}")
+        sys.exit(1)
 
 def main():
     print("─" * 60)
-    print("  SECRET SCANNER BRIDGE (Gitleaks)")
+    print("  SECRET SCANNER - REAL MODE")
     print("─" * 60)
-
-    if not run_real_scan():
-        run_simulation()
-
-    print(f"  → Report: {OUTPUT_FILE.relative_to(ROOT_DIR)}")
-    print()
+    run_real_scan()
 
 if __name__ == "__main__":
     main()

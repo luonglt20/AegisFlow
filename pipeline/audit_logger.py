@@ -17,8 +17,8 @@ from pathlib import Path
 # ─────────────────────────────────────────────────────────────
 SCRIPT_DIR   = Path(__file__).parent.resolve()
 ROOT_DIR     = SCRIPT_DIR.parent
-LOG_FILE     = ROOT_DIR / "mock-data" / "audit_log.json"
-POLICY_FILE  = ROOT_DIR / "mock-data" / "policy_result.json"
+LOG_FILE     = ROOT_DIR / "security-results" / "audit_log.json"
+POLICY_FILE  = ROOT_DIR / "security-results" / "policy_result.json"
 
 def log_event():
     print("─" * 60)

@@ -6,7 +6,7 @@ Hybrid SBOM Bridge:
   • PRODUCTION:  Runs 'syft' or 'cyclonedx-npm' if available.
   • SIMULATION:  Falls back to high-fidelity CycloneDX v1.5 generator.
 
-Output: CycloneDX JSON format in mock-data/sbom.json
+Output: CycloneDX JSON format in security-results/sbom.json
 """
 
 import json
@@ -22,8 +22,9 @@ from pathlib import Path
 # ─────────────────────────────────────────────────────────────
 SCRIPT_DIR  = Path(__file__).parent.resolve()
 ROOT_DIR    = SCRIPT_DIR.parent
-APP_DIR     = ROOT_DIR / "vulnerable-app"
-OUTPUT_FILE = ROOT_DIR / "mock-data" / "sbom.json"
+APP_DIR     = Path(os.environ.get("SCAN_TARGET", str(ROOT_DIR / "_target_required_")))
+OUTPUT_FILE = ROOT_DIR / "security-results" / "sbom.json"
+APP_NAME    = APP_DIR.name or "unknown-target"
 
 # ─────────────────────────────────────────────────────────────
 # Real Tool Integration
@@ -38,9 +39,10 @@ def run_real_scan() -> bool:
     print(f"  [PRODUCTION] Found SBOM tool at {tool_path}. Generating SBOM...")
 
     try:
-        if "syft" in tool_path:
+        # Syft is the primary tool
+        if tool_path and "syft" in tool_path:
             cmd = [
-                "syft", str(APP_DIR),
+                tool_path, str(APP_DIR),
                 "--output", f"cyclonedx-json={OUTPUT_FILE}",
                 "-q"
             ]
@@ -106,7 +108,7 @@ def run_simulation():
             "timestamp": now,
             "component": {
                 "type": "application",
-                "name": "vulnerable-app",
+                "name": APP_NAME,
                 "version": "1.0.0"
             }
         },

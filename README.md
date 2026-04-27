@@ -1,42 +1,82 @@
-# AegisFlow - Enterprise ASPM & DevSecOps Control Plane
-**Tác giả:** Lê Tuấn Lương
+# AegisFlow
 
-AegisFlow là nền tảng **Application Security Posture Management (ASPM)** chuẩn doanh nghiệp, tích hợp trí tuệ nhân tạo (Llama-3.3) để tự động hóa toàn bộ quy trình từ thu thập dữ liệu (Ingestion), Phân loại (Triage) đến Đề xuất sửa lỗi (Remediation).
+AegisFlow is a local DevSecOps/AppSec framework built for the case-study submission. It uses one repository, one Docker-based environment, one pipeline, and one dashboard to orchestrate security scanning across a selected target folder.
 
-## 🌟 Tính năng đột phá (2026 Enterprise Edition)
+The operator workflow is intentionally simple:
+1. Start the stack with Docker Compose.
+2. Open the dashboard at `http://localhost:58081`.
+3. Choose the application folder to scan.
+4. Click `Scan`.
+5. Review findings, policy decisions, remediation guidance, SBOM data, and audit logs in the dashboard and generated report artifacts.
 
-- **100% DevSecOps Coverage (8/8 Mảng)**: Bao phủ toàn diện ma trận bảo mật: SAST (Code), SCA (Thư viện), IaC (Hạ tầng), Secrets (Thông tin nhạy cảm), DAST (Web Runtime), Container (Image), Network (Hệ thống mạng), API (Fuzzing) và cả Manual Pentest.
-- **Zero-Config Dynamic Ingestion**: Kiến trúc "Hố đen" dữ liệu. Bạn không cần cấu hình API hay biến môi trường rườm rà. Chỉ cần các công cụ quét xuất ra file JSON và ném vào thư mục `ingest/`, AegisFlow sẽ tự động nhận diện (Heuristics) và tổng hợp lên Dashboard.
-- **AI Deep Context Analysis**: Không chỉ đọc báo cáo, AI đọc hiểu 20 dòng code xung quanh lỗ hổng để loại bỏ lỗi ảo (False Positives) và đánh giá tác động kinh doanh thực tế (Business Impact) với độ chính xác >95%.
-- **OWASP Top 10 & MITRE ATT&CK**: Hệ thống tự động map các lỗ hổng theo các tiêu chuẩn quốc tế mới nhất.
+## Submission Mapping
 
-## 🚀 Quick Start (3 Phút)
+This repository is structured to satisfy the mandatory submission package:
 
-### 1. Cơ chế Drop-in (Zero-Config)
-Cách đơn giản nhất để sử dụng AegisFlow là dùng các công cụ bảo mật của bạn (Trivy, Semgrep, Nmap, Restler...) quét dự án và lưu file kết quả `*.json` vào thư mục `ingest/`. Sau đó chạy báo cáo:
+- `docker-compose.yml`: local runtime for the dashboard, pipeline controller, and demo target app.
+- `DevSecOps_CaseStudy_Report.pdf`: single PDF report used for scoring.
+- Supporting project files: pipeline scripts, dashboard, report generator, sample targets, and reports.
+
+## Tasks Covered
+
+This repo covers Task 1, Task 2, Task 3, Task 4, and Task 5.
+
+- Task 1: CI/CD pipeline with explicit `build`, `test`, `security`, and `report` stages in [.gitlab-ci.yml](/Users/toilaluongg/Desktop/AegisFlow-main/.gitlab-ci.yml:1).
+- Task 2: SCA, IaC, container-oriented security, secrets scanning, and SBOM generation.
+- Task 3: policy enforcement, dashboard reporting, SLA handling, exception workflow, and auditability.
+- Task 4: pipeline security analysis and mitigations, including secret handling, least privilege, and supply-chain guardrails.
+- Task 5: secure-by-design threat modeling for a separate payment-service system described in the report.
+
+## Real Tools vs Fallback Logic
+
+The framework prefers real scanners:
+
+- SAST: `semgrep`
+- SCA and image/dependency scan: `trivy`
+- Secrets: `gitleaks`
+- IaC: `checkov`
+- DAST: `nuclei`
+- SBOM: `syft`
+
+For portability, some stages support controlled fallback behavior:
+
+- `build` and `test` stages use lightweight validation when a selected target does not expose a portable build/test command.
+- AI triage uses Groq when `GROQ_API_KEY` is provided; otherwise it falls back to deterministic local reasoning templates.
+- DAST runs against a live URL when `TARGET_URL` is reachable; if no live target is provided, the framework documents predictive mode in the report.
+
+These fallbacks are deliberate and are explained in the PDF report along with their limits.
+
+## Quick Start
+
+1. Optionally copy `.env.example` to `.env`.
+2. Optionally add `GROQ_API_KEY` for live AI triage.
+3. Start the stack:
+
 ```bash
-./pipeline/run_pipeline.sh
+docker-compose up --build
 ```
 
-### 2. Chế độ Quét thật Tự Động (Real-World Scan)
-Nếu bạn đã có sẵn mã nguồn, AegisFlow có thể tự gọi các công cụ (Semgrep, Trivy, Gitleaks, Checkov, Nuclei) để quét:
+4. Open `http://localhost:58081`.
+
+## Useful Commands
+
 ```bash
-export GROQ_API_KEY="gsk_..."
-./pipeline/run_real_scanners.sh /đường/dẫn/dự/án/của/bạn
+make up
+make pipeline
+make down
 ```
 
-### 3. Khởi chạy Giao Diện
-Sau khi có kết quả, khởi động máy chủ UI để quản lý trực quan:
-```bash
-python3 server.py
-# Truy cập: http://localhost:58082
-```
+## Important Artifacts
 
-## 📊 Dashboard Preview
-Hệ thống sử dụng thiết kế **Glassmorphism** sang trọng, cung cấp góc nhìn toàn cảnh (Single Pane of Glass) cho Giám đốc Bảo mật (CISO) và các kỹ sư DevSecOps:
-- Điểm số sức khỏe dự án (Security Score).
-- Phân luồng ưu tiên theo 8 nhóm kiểm thử (Automated vs Manual Intel).
-- Mã vá lỗi (Patch) do AI tạo ra sẵn sàng copy-paste.
+- Dashboard: [/dashboard](/Users/toilaluongg/Desktop/AegisFlow-main/dashboard)
+- Pipeline scripts: [/pipeline](/Users/toilaluongg/Desktop/AegisFlow-main/pipeline)
+- Security output: [/security-results](/Users/toilaluongg/Desktop/AegisFlow-main/security-results)
+- PDF report: [DevSecOps_CaseStudy_Report.pdf](/Users/toilaluongg/Desktop/AegisFlow-main/DevSecOps_CaseStudy_Report.pdf)
 
----
-**Organization**: CMC TSSG - DevSecOps Excellence Center
+## Public Repo Safety
+
+Before publishing, this repo is designed to avoid committing live secrets:
+
+- `docker-compose.yml` reads runtime values from `.env`.
+- `.env` is ignored by git.
+- `.env.example` documents required variables.

@@ -1,0 +1,11 @@
+{
+  "name": "aegisflow-report-tools",
+  "private": true,
+  "scripts": {
+    "report:html": "python3 pipeline/generate_report.py",
+    "report:pdf": "node scripts/export_report_pdf.js"
+  },
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}

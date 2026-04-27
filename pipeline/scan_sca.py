@@ -1,135 +1,52 @@
 #!/usr/bin/env python3
 """
-pipeline/scan_sca.py
+pipeline/scan_sca.py - REAL MODE
 ─────────────────────────────────────────────────────────────────────────────
-Hybrid SCA Bridge:
-  • PRODUCTION:  Runs 'trivy' CLI if available in PATH.
-  • SIMULATION:  Falls back to context-aware package.json analysis.
-
-Output: Trivy JSON format in mock-data/sca_results.json
+Runs REAL Trivy scan against the target application to find vulnerable dependencies.
 """
 
 import json
 import os
 import sys
-import shutil
 import subprocess
-from datetime import datetime, timezone
+import shutil
 from pathlib import Path
 
-# ─────────────────────────────────────────────────────────────
-# Config
-# ─────────────────────────────────────────────────────────────
-SCRIPT_DIR  = Path(__file__).parent.resolve()
-ROOT_DIR    = SCRIPT_DIR.parent
-APP_DIR     = ROOT_DIR / "vulnerable-app"
-PKG_FILE    = APP_DIR / "package.json"
-OUTPUT_FILE = ROOT_DIR / "mock-data" / "sca_results.json"
+SCRIPT_DIR   = Path(__file__).parent.resolve()
+ROOT_DIR     = SCRIPT_DIR.parent
+TARGET_DIR   = Path(os.environ.get("SCAN_TARGET", ROOT_DIR / "_target_required_"))
+OUTPUT_FILE  = ROOT_DIR / "security-results" / "sca_results.json"
 
-# ─────────────────────────────────────────────────────────────
-# Simulation Database
-# ─────────────────────────────────────────────────────────────
-CVE_DATABASE = {
-    "lodash": [
-        {"id": "CVE-2021-23337", "sev": "HIGH", "fixed": "4.17.21", "title": "Command Injection"},
-    ],
-    "axios": [
-        {"id": "CVE-2022-0155", "sev": "HIGH", "fixed": "0.21.2", "title": "SSRF / Auth Leak"},
-    ],
-    "log4j-core": [
-        {"id": "CVE-2021-44228", "sev": "CRITICAL", "fixed": "2.15.0", "title": "Log4Shell RCE"},
-    ]
-}
-
-# ─────────────────────────────────────────────────────────────
-# Real Tool Integration
-# ─────────────────────────────────────────────────────────────
-
-def run_real_scan() -> bool:
+def run_real_scan():
+    # Find trivy - installed via install.sh in Docker (/usr/local/bin/trivy)
     trivy_path = shutil.which("trivy")
-    if not trivy_path:
-        return False
 
-    print(f"  [PRODUCTION] Found 'trivy' at {trivy_path}. Running filesystem scan...")
+    if not trivy_path:
+        print("  [ERROR] Trivy not found in PATH. Is it installed in Docker?")
+        sys.exit(1)
+
+    print(f"  [REAL-MODE] Running Trivy SCA on: {TARGET_DIR}")
 
     try:
-        # scan the app directory
-        cmd = [
-            "trivy", "fs",
-            "--format", "json",
-            "--output", str(OUTPUT_FILE),
-            "--severity", "CRITICAL,HIGH,MEDIUM",
-            str(APP_DIR)
-        ]
-
+        # trivy fs --format json -o output.json path
+        cmd = [trivy_path, "fs", "--format", "json", "-o", str(OUTPUT_FILE), str(TARGET_DIR)]
         result = subprocess.run(cmd, capture_output=True, text=True, check=False)
 
-        if result.returncode == 0 and OUTPUT_FILE.exists():
-            print(f"  ✓ PRODUCTION Scan Complete (Real Trivy results saved)")
-            return True
+        if OUTPUT_FILE.exists():
+            print(f"  ✓ SCA Scan Complete. Results: {OUTPUT_FILE.name}")
         else:
-            print(f"  [ERROR] Trivy failed: {result.stderr[:200]}")
+            print(f"  [ERROR] Trivy failed to generate report. Stderr: {result.stderr}")
+            sys.exit(1)
 
     except Exception as e:
-        print(f"  [ERROR] Exception during real scan: {e}")
-
-    return False
-
-# ─────────────────────────────────────────────────────────────
-# Simulation Logic
-# ─────────────────────────────────────────────────────────────
-
-def run_simulation():
-    print("  [SIMULATION] Trivy not found. Analyzing package.json...")
-
-    if not PKG_FILE.exists():
-        print(f"  [ERROR] Not found: {PKG_FILE}")
-        return
-
-    try:
-        pkg = json.loads(PKG_FILE.read_text())
-        deps = {**pkg.get("dependencies", {}), **pkg.get("devDependencies", {})}
-    except:
-        deps = {}
-
-    vulnerabilities = []
-    for name, ver in deps.items():
-        clean_ver = ver.lstrip("^~>=<v")
-        if name in CVE_DATABASE:
-            for cve in CVE_DATABASE[name]:
-                # Simple version check (simulated)
-                if clean_ver < cve["fixed"]:
-                    vulnerabilities.append({
-                        "VulnerabilityID": cve["id"], "PkgName": name, "InstalledVersion": clean_ver,
-                        "FixedVersion": cve["fixed"], "Severity": cve["sev"], "Title": cve["title"],
-                        "PrimaryURL": f"https://avd.aquasec.com/nvd/{cve['id'].lower()}"
-                    })
-
-    report = {
-        "SchemaVersion": 2,
-        "Results": [{
-            "Target": "package.json",
-            "Class": "lang-pkgs",
-            "Type": "npm",
-            "Vulnerabilities": vulnerabilities,
-            "Metadata": {"Mode": "SIMULATED"}
-        }]
-    }
-
-    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-    OUTPUT_FILE.write_text(json.dumps(report, indent=2))
-    print(f"  ✓ SIMULATION Scan Complete: {len(vulnerabilities)} vulnerabilities detected.")
+        print(f"  [ERROR] Trivy execution failed: {e}")
+        sys.exit(1)
 
 def main():
     print("─" * 60)
-    print("  SCA SCANNER BRIDGE (Trivy)")
+    print("  SCA SCANNER - REAL MODE")
     print("─" * 60)
-
-    if not run_real_scan():
-        run_simulation()
-
-    print(f"  → Report: {OUTPUT_FILE.relative_to(ROOT_DIR)}")
-    print()
+    run_real_scan()
 
 if __name__ == "__main__":
     main()

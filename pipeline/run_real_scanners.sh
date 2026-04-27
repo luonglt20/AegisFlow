@@ -5,7 +5,7 @@ TARGET_FOLDER=${1:-"vulnerable-app"}
 ROOT_PATH=$(pwd)
 BIN_PATH="$ROOT_PATH/pipeline/.bin"
 INGEST_PATH="$ROOT_PATH/ingest"
-MOCK_DATA_PATH="$ROOT_PATH/mock-data"
+MOCK_DATA_PATH="$ROOT_PATH/security-results"
 if [[ "$1" == /* ]]; then
     TARGET_FULL_PATH="$1"
 else

@@ -1,105 +1,58 @@
 stages:
   - build
   - test
-  - security-sast
-  - security-sca-iac
-  - security-dast
-  - ai-triage
-  - policy-gate
-  - notify
+  - security
+  - report
 
 variables:
-  GROQ_API_KEY: $GROQ_API_KEY
-  PIPELINE_RUN_ID: $CI_PIPELINE_ID
+  PYTHONUNBUFFERED: "1"
+  DOCKER_DRIVER: overlay2
 
-build:
+build_app:
   stage: build
-  image: node:18-alpine
+  image: python:3.11-slim
   script:
-    - cd vulnerable-app && npm install
-    - echo "✓ Build complete"
+    - python3 pipeline/build_target.py
   artifacts:
-    paths: [vulnerable-app/node_modules/]
-    expire_in: 1h
+    when: always
+    paths:
+      - security-results/build_report.json
 
-unit-test:
+test_app:
   stage: test
-  script:
-    - echo "✓ Running unit tests..."
-    - echo "Tests passed: 24/24"
-
-sast-scan:
-  stage: security-sast
-  image: returntocorp/semgrep:latest
-  script:
-    # Hybrid Bridge handles detection:
-    # If Semgrep image is used, it will run real 'semgrep'
-    - cd pipeline && python3 scan_sast.py
-  artifacts:
-    reports:
-      sast: mock-data/sast_results.json
-    paths: [mock-data/sast_results.json]
-    expire_in: 1 week
-
-secret-scan:
-  stage: security-sast
-  image: zricethezav/gitleaks:latest
-  script:
-    - cd pipeline && python3 scan_secret.py
-  artifacts:
-    paths: [mock-data/secret_results.json]
-    expire_in: 1 week
-
-sca-iac-scan:
-  stage: security-sca-iac
-  image: docker:20.10.16
-  services: [docker:20.10.16-dind]
-  script:
-    - apk add python3 && cd pipeline
-    - python3 scan_sca.py
-    - python3 scan_iac.py
-    - python3 scan_sbom.py
-  artifacts:
-    paths: [mock-data/sca_results.json, mock-data/iac_results.json, mock-data/sbom.json]
-
-dast-scan:
-  stage: security-dast
-  image: softwaresecurityproject/zap-stable
-  needs: [build]
-  script:
-    - apt-get update && apt-get install -y python3
-    - cd pipeline && python3 scan_dast.py
-  artifacts:
-    paths: [mock-data/dast_results.json]
-
-ai-triage:
-  stage: ai-triage
   image: python:3.11-slim
-  needs: [sast-scan, sca-iac-scan, dast-scan]
   script:
-    - cd pipeline
-    - python3 report_generator.py
-    - python3 ai_triage_engine.py
-    - python3 generate_report.py
+    - python3 pipeline/test_target.py
   artifacts:
-    paths: [mock-data/full_report_triaged.json, DevSecOps_CaseStudy_Report.html]
+    when: always
+    paths:
+      - security-results/test_report.json
 
-policy-gate:
-  stage: policy-gate
+security_scan:
+  stage: security
   image: python:3.11-slim
-  needs: [ai-triage]
+  before_script:
+    - apt-get update && apt-get install -y curl git wget unzip nodejs npm golang
+    - pip install --no-cache-dir semgrep checkov requests
+    - curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+    - curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.18.4/gitleaks_8.18.4_linux_x64.tar.gz | tar -xz -C /usr/local/bin gitleaks
+    - curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+    - go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+    - ln -s /root/go/bin/nuclei /usr/local/bin/nuclei
   script:
-    - cd pipeline && python3 policy_engine.py
-  allow_failure: false
+    - bash pipeline/run_pipeline.sh
+  artifacts:
+    when: always
+    paths:
+      - security-results/
+      - dashboard/data/
 
-notify:
-  stage: notify
-  when: always
+report_case_study:
+  stage: report
+  image: python:3.11-slim
   script:
-    - |
-      if [ "$CI_JOB_STATUS" == "failed" ]; then
-        echo "NOTIFY: Pipeline BLOCKED - Security issues found"
-        echo "Dashboard: http://localhost:58080"
-      else
-        echo "NOTIFY: Pipeline PASSED - Governance Check Clean"
-      fi
+    - python3 pipeline/generate_report.py
+  artifacts:
+    when: always
+    paths:
+      - DevSecOps_CaseStudy_Report.html

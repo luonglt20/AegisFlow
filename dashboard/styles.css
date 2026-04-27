@@ -45,6 +45,8 @@ body {
   background-color: var(--bg-base);
   color: var(--text-main);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
   height: 100vh;
   overflow: hidden;
   display: flex;
@@ -228,27 +230,23 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text-main);
 }
 
-/* Badges */
+/* Badges - Enhanced Contrast */
 .badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
 }
-.badge-glass {
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid var(--border-light);
-}
-.badge-critical { background: #fee2e2; color: var(--sev-critical); border: 1px solid #fca5a5; }
-.badge-high { background: #ffedd5; color: var(--sev-high); border: 1px solid #fdba74; }
-.badge-medium { background: #fef3c7; color: var(--sev-medium); border: 1px solid #fcd34d; }
-.badge-low { background: #d1fae5; color: var(--sev-low); border: 1px solid #6ee7b7; }
-.badge-brand { background: var(--brand-light); color: var(--brand-primary); border: 1px solid #fed7aa; }
+.badge-critical { background: #fee2e2; color: #991b1b; border: 1px solid #f87171; }
+.badge-high { background: #ffedd5; color: #9a3412; border: 1px solid #fb923c; }
+.badge-medium { background: #fef3c7; color: #92400e; border: 1px solid #fbbf24; }
+.badge-low { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
+.badge-brand { background: var(--brand-light); color: var(--brand-primary); border: 1px solid #fb923c; }
 
 .badge-outline {
   background: transparent;
@@ -365,6 +363,12 @@ h1, h2, h3, h4, h5, h6 {
   padding-top: 20px;
 }
 
+/* Rotate chevron when open */
+.finding-item:has(.finding-body.open) .chevron-icon {
+  transform: rotate(180deg);
+  color: var(--brand-primary);
+}
+
 /* =========================================
    Code Blocks
    ========================================= */
@@ -396,6 +400,35 @@ h1, h2, h3, h4, h5, h6 {
 .code-after { border-left: 3px solid var(--sev-low); }
 
 /* Copy Button for code blocks */
+.form-control {
+  background: var(--bg-body);
+  border: 1px solid var(--border-light);
+  color: var(--text-main);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.form-control:hover {
+  border-color: var(--brand-primary);
+}
+
+.form-control:focus {
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.15);
+}
+
+.filter-bar select {
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2364748b' viewBox='0 0 256 256'%3E%3Cpath d='M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80a8,8,0,0,1,11.32-11.32L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 36px;
+}
+
 .copy-btn {
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
@@ -589,3 +622,115 @@ h1, h2, h3, h4, h5, h6 {
 /* Utility Links */
 a { color: var(--brand-primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
+
+.project-item-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-light);
+  padding: 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+}
+
+.project-item-card:hover {
+  background: rgba(255, 107, 0, 0.05);
+  border-color: var(--brand-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+
+/* Toggle Switch CSS */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #334155;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: var(--brand-primary);
+}
+
+input:checked + .slider:before {
+  transform: translateX(18px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* Scanning Animation */
+@keyframes pulse-orange {
+  0% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 107, 0, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); }
+}
+
+.scanning-active {
+  animation: pulse-orange 2s infinite;
+  border: 1px solid var(--brand-primary) !important;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.pulse-active {
+  animation: pulse-orange 1.5s infinite;
+}

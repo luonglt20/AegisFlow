@@ -1,45 +1,74 @@
-# AegisFlow - User Guide (Hướng dẫn sử dụng)
+# User Guide
 
-Chào mừng bạn đến với AegisFlow ASPM. Hướng dẫn này giúp bạn vận hành hệ thống tập trung dữ liệu bảo mật (Control Plane) của doanh nghiệp một cách nhanh chóng nhất.
+## 1. Objective
 
-## 🏁 1. Chuẩn bị môi trường
-- **Yêu cầu**: Máy Mac/Linux đã cài Python 3.11+.
-- **API Key**: Lấy mã API tại [Groq Cloud](https://console.groq.com/keys) để cấp nguồn cho AI Triage Engine.
+This project is a local security operations framework for the case study. It lets a reviewer run one Dockerized environment, select one application folder, and execute the same DevSecOps/AppSec pipeline end to end.
 
-## ⚡ 2. Quy trình Quét và Thu Thập Dữ Liệu (Data Ingestion)
+## 2. Prerequisites
 
-Bạn có hai cách để đưa dữ liệu lỗ hổng vào AegisFlow:
+- Docker
+- Docker Compose
+- Optional: `GROQ_API_KEY` for live AI triage
 
-### Cách 1: Tự động hoàn toàn (Auto-Scanning)
-Nếu bạn có mã nguồn dự án trên máy, hãy để AegisFlow tự động gọi các công cụ cài sẵn (Trivy, Semgrep, Gitleaks, Nuclei, Checkov):
+## 3. Startup
+
+1. Optionally create `.env` from `.env.example`.
+2. Run:
+
 ```bash
-# Trỏ đến thư mục dự án của bạn
-./pipeline/run_real_scanners.sh /path/to/your/project
+docker-compose up --build
 ```
-Script sẽ tự quét và đẩy toàn bộ kết quả vào thư mục `ingest/`.
 
-### Cách 2: Sử dụng cơ chế Zero-Config (Cho CI/CD hoặc Tool Ngoài)
-Đây là sức mạnh cốt lõi của AegisFlow. Bất kỳ máy chủ CI/CD nào hoặc công cụ độc lập nào của bạn (như Nmap, API Fuzzer, báo cáo Pentest thủ công) chỉ cần:
-1. Xuất kết quả dưới dạng file JSON.
-2. Thả file đó vào thư mục `ingest/` ở gốc dự án.
-3. Chạy `python3 pipeline/report_generator.py` để hệ thống tự động nhận dạng file và tổng hợp.
+3. Open:
 
-Không cần cấu hình biến môi trường, không giới hạn số lượng file!
+```text
+http://localhost:58081
+```
 
-## 📊 3. Khởi chạy Giao diện Quản lý (Dashboard)
+## 4. How to Demo
 
-1. **Khởi chạy Aegis Server**:
-   ```bash
-   python3 server.py
-   ```
-2. **Truy cập Dashboard**: Mở trình duyệt tại [http://localhost:58082](http://localhost:58082).
-3. **Phân tích Dashboard**:
-   - Theo dõi biểu đồ phân bổ theo 8 nhóm DevSecOps (Container, Network, API, SAST...).
-   - Vào tab **Action Center**, click vào từng lỗ hổng để xem AI đánh giá "True Positive" và mô tả tác động thực tế (Impact).
-   - Truy cập **Developer Portal** để lấy mã nguồn (Patch) đã được AI viết lại an toàn.
+1. Open the `Scanner Intelligence` tab.
+2. Select or enter the target folder.
+3. Provide the target URL if live DAST is desired.
+4. Click `Launch Integrated Security Pipeline`.
+5. Review:
+   - Executive risk summary
+   - Action Center findings
+   - Pipeline and policy status
+   - SBOM output
+   - Audit log
+   - Generated report artifacts in the repo root and `security-results`
 
-## 📄 4. Xuất báo cáo Enterprise
-Sau mỗi chu kỳ quét, báo cáo định dạng HTML (`DevSecOps_CaseStudy_Report.html`) và JSON tổng hợp (`mock-data/full_report_triaged.json`) sẽ tự động được sinh ra để nộp cho ban kiểm toán (Compliance Audit).
+## 5. CI/CD Design
 
----
-**Hỗ trợ kỹ thuật**: Liên hệ AppSec Team / Lê Tuấn Lương.
+The case study uses one pipeline for all Task 1-4 work:
+
+- `build`: stack-aware validation for the selected app
+- `test`: lightweight or real test execution depending on detected stack
+- `security`: SAST, SCA, secrets, IaC, DAST, SBOM, AI triage, policy enforcement
+- `report`: HTML/PDF report generation
+
+Reference:
+
+- [.gitlab-ci.yml](/Users/toilaluongg/Desktop/AegisFlow-main/.gitlab-ci.yml:1)
+- [pipeline/run_pipeline.sh](/Users/toilaluongg/Desktop/AegisFlow-main/pipeline/run_pipeline.sh:1)
+
+## 6. Mock / Fallback Disclosure
+
+The assignment allows mocked behavior if explained clearly. This repo documents each fallback:
+
+- `build` and `test`: for multi-target portability, some applications are validated structurally instead of fully built/tested in local mode.
+- AI triage: real when Groq is configured; deterministic fallback when it is not.
+- DAST: live against a reachable target URL; otherwise the workflow records predictive limitations.
+
+Limits:
+
+- Results from fallback stages are useful for demonstrating orchestration and governance, but they are not equivalent to a production-grade CI runner with app-specific dependency caching and test setup.
+
+## 7. Repository Layout
+
+- [/dashboard](/Users/toilaluongg/Desktop/AegisFlow-main/dashboard): dashboard UI
+- [/pipeline](/Users/toilaluongg/Desktop/AegisFlow-main/pipeline): orchestration, scanners, triage, policy, reporting
+- [/real-apps](/Users/toilaluongg/Desktop/AegisFlow-main/real-apps): sample targets
+- [/security-results](/Users/toilaluongg/Desktop/AegisFlow-main/security-results): generated reports
+- [DevSecOps_CaseStudy_Report.pdf](/Users/toilaluongg/Desktop/AegisFlow-main/DevSecOps_CaseStudy_Report.pdf): final submission PDF

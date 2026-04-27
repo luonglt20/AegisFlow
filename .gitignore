@@ -15,5 +15,5 @@ tests/
 test/
 *results.json
 *.log
-DevSecOps_CaseStudy_Report.html
 full_report_triaged.json
+storage/
