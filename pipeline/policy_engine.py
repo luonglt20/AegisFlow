@@ -28,6 +28,9 @@ SCRIPT_DIR   = Path(__file__).parent.resolve()
 ROOT_DIR     = SCRIPT_DIR.parent
 REPORT_FILE  = Path(os.environ.get("TRIAGED_REPORT", ROOT_DIR / "security-results" / "full_report_triaged.json"))
 OUTPUT_FILE  = Path(os.environ.get("POLICY_OUTPUT", ROOT_DIR / "security-results" / "policy_result.json"))
+BUILD_REPORT = ROOT_DIR / "security-results" / "build_report.json"
+TEST_REPORT  = ROOT_DIR / "security-results" / "test_report.json"
+STRICT_CI    = os.environ.get("STRICT_CI", "").lower() in {"1", "true", "yes"}
 
 # ─────────────────────────────────────────────────────────────
 # ANSI color codes
@@ -70,7 +73,7 @@ def print_blocked_banner(reason: str, counts: dict[str, int]) -> None:
     print(colored("█" + sev_line.center(width - 2) + "█", RED))
     print(empty)
     print(colored("█" + " Action required: Review findings in Dashboard ".center(width - 2) + "█", RED, DIM))
-    print(colored("█" + " http://localhost:58080 ".center(width - 2) + "█", RED, DIM))
+    print(colored("█" + " http://localhost:58081 ".center(width - 2) + "█", RED, DIM))
     print(empty)
     print(border)
     print()
@@ -214,7 +217,43 @@ def calculate_app_tier(findings: list[dict], risk_weight: int) -> str:
         return "TIER 3 (Medium Risk / Internal Tool)"
     return "TIER 4 (Low Risk / Dev-Test)"
 
-def evaluate_policy(findings: list[dict]) -> tuple[str, str, int, dict]:
+def load_quality_report(path: Path, stage: str) -> dict:
+    if not path.exists():
+        return {"stage": stage, "status": "missing", "mode": "missing", "details": []}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return {
+            "stage": data.get("stage", stage),
+            "status": data.get("status", "unknown"),
+            "mode": data.get("mode", "unknown"),
+            "strict_ci": data.get("strict_ci", STRICT_CI),
+            "selected_script": data.get("selected_script"),
+            "details": data.get("details", []),
+        }
+    except Exception as exc:
+        return {"stage": stage, "status": "invalid", "mode": "invalid", "details": [{"message": str(exc)}]}
+
+
+def evaluate_quality_gate(quality: dict) -> tuple[str, str, int]:
+    failed = [stage for stage in quality.values() if stage.get("status") in {"failed", "invalid", "missing"}]
+    skipped = [stage for stage in quality.values() if stage.get("status") == "skipped" or stage.get("mode") in {"fallback", "skipped"}]
+
+    if failed:
+        names = ", ".join(stage.get("stage", "unknown") for stage in failed)
+        return "BLOCKED", f"Quality Gate Violated: {names} stage did not complete successfully.", 1
+
+    if STRICT_CI and skipped:
+        names = ", ".join(stage.get("stage", "unknown") for stage in skipped)
+        return "BLOCKED", f"Quality Gate Violated: STRICT_CI does not accept skipped/fallback stages ({names}).", 1
+
+    if skipped:
+        names = ", ".join(stage.get("stage", "unknown") for stage in skipped)
+        return "WARNING", f"Quality Gate Warning: {names} stage used skipped/fallback validation.", 0
+
+    return "PASSED", "Quality Gate Met: build and test evidence is acceptable.", 0
+
+
+def evaluate_policy(findings: list[dict], quality: dict) -> tuple[str, str, int, dict]:
     """
     [TECHNICAL UPGRADE] High-Performance Parallel Policy Gate.
     """
@@ -236,9 +275,7 @@ def evaluate_policy(findings: list[dict]) -> tuple[str, str, int, dict]:
     crit = counts.get("CRITICAL", 0)
     high = counts.get("HIGH", 0)
 
-    status = "PASSED"
-    reason = "Policy Met: Risk weight is within acceptable threshold."
-    exit_code = 0
+    status, reason, exit_code = evaluate_quality_gate(quality)
 
     if crit > 0:
         status = "BLOCKED"
@@ -248,7 +285,7 @@ def evaluate_policy(findings: list[dict]) -> tuple[str, str, int, dict]:
         status = "BLOCKED"
         reason = f"Policy Violated: {high} HIGH findings detected (Threshold: 2)."
         exit_code = 1
-    elif total_risk_weight > 50:
+    elif total_risk_weight > 50 and status != "BLOCKED":
         status = "WARNING"
         reason = f"High Risk Momentum: Total risk weight ({total_risk_weight}) exceeds threshold."
         exit_code = 0
@@ -266,6 +303,10 @@ def main() -> None:
 
     report = json.loads(REPORT_FILE.read_text(encoding="utf-8"))
     findings = report.get("findings", [])
+    quality_summary = {
+        "build": load_quality_report(BUILD_REPORT, "build"),
+        "test": load_quality_report(TEST_REPORT, "test"),
+    }
 
     counts = {}
     for f in findings:
@@ -273,7 +314,7 @@ def main() -> None:
         counts[sev] = counts.get(sev, 0) + 1
 
     print_findings_breakdown(counts, findings)
-    status, reason, exit_code, compliance = evaluate_policy(findings)
+    status, reason, exit_code, compliance = evaluate_policy(findings, quality_summary)
 
     if status == "BLOCKED": print_blocked_banner(reason, counts)
     elif status == "WARNING": print_warning_banner(reason, counts)
@@ -284,7 +325,9 @@ def main() -> None:
         "block_reason": reason,
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "findings_summary": counts,
+        "quality_summary": quality_summary,
         "compliance_summary": compliance,
+        "strict_ci": STRICT_CI,
         "exit_code": exit_code
     }
 

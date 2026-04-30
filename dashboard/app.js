@@ -5,6 +5,8 @@ const appState = {
   data: {
     findings: [],
     policy: {},
+    quality: {},
+    sbom: {},
     audit: [],
     status: {
         is_scanning: false,
@@ -30,12 +32,14 @@ function normalizePolicy(payload) {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return {};
 
     const statusLabel = payload.pipeline_status || payload.status || 'UNKNOWN';
-    const isBlocked = String(statusLabel).toUpperCase() === 'BLOCKED';
+    const normalized = String(statusLabel).toUpperCase();
+    const isBlocked = normalized === 'BLOCKED' || normalized === 'FAILED';
 
     return {
         ...payload,
         passed: payload.passed ?? !isBlocked,
-        statusLabel
+        statusLabel,
+        quality_summary: payload.quality_summary || {}
     };
 }
 
@@ -57,7 +61,7 @@ function updateScanMeta(meta = {}) {
     const appName = meta.app_name || meta.target_name || appState.lastTarget?.split('/').pop() || 'No target selected';
     const scanId = meta.pipeline_run_id || meta.scan_id || 'N/A';
     const branch = meta.branch || 'main';
-    const scanTime = meta.generated_at || meta.scan_date || meta.timestamp || 'N/A';
+    const scanTime = meta.scan_timestamp || meta.generated_at || meta.scan_date || meta.timestamp || 'N/A';
 
     if (projectName) projectName.innerText = `Project: ${appName}`;
     if (scanMeta) scanMeta.innerText = `Scan: ${scanTime} · Run: ${scanId} · Branch: ${branch}`;
@@ -92,20 +96,28 @@ async function loadData() {
     const timestamp = Date.now();
     console.log(`[DASHBOARD] Syncing Full State...`);
 
-    const [findingsPayload, policyPayload, auditPayload, statusPayload] = await Promise.all([
+    const [findingsPayload, policyPayload, auditPayload, statusPayload, buildPayload, testPayload, sbomPayload] = await Promise.all([
       fetchJsonWithFallback([
         `/data/full_report_triaged.json?v=${timestamp}`,
         `/data/full_report.json?v=${timestamp}`
       ], { findings: [] }),
       fetchJsonWithFallback([`/data/policy_result.json?v=${timestamp}`], {}),
       fetchJsonWithFallback([`/data/audit_log.json?v=${timestamp}`], []),
-      fetchJsonWithFallback([`/api/status?v=${timestamp}`], {})
+      fetchJsonWithFallback([`/api/status?v=${timestamp}`], {}),
+      fetchJsonWithFallback([`/data/build_report.json?v=${timestamp}`], {}),
+      fetchJsonWithFallback([`/data/test_report.json?v=${timestamp}`], {}),
+      fetchJsonWithFallback([`/data/sbom.json?v=${timestamp}`], {})
     ]);
 
     appState.data.findings = normalizeFindings(findingsPayload);
     appState.data.policy = normalizePolicy(policyPayload);
     appState.data.audit = normalizeAudit(auditPayload);
     appState.data.status = statusPayload;
+    appState.data.quality = {
+        build: buildPayload?.stage ? buildPayload : policyPayload?.quality_summary?.build || {},
+        test: testPayload?.stage ? testPayload : policyPayload?.quality_summary?.test || {}
+    };
+    appState.data.sbom = sbomPayload || {};
     appState.data.scanMeta = findingsPayload?.scan_metadata || {};
 
     console.log(`[DASHBOARD] Ingested ${appState.data.findings.length} findings.`);
@@ -135,8 +147,57 @@ function refreshUI() {
     updateProgressUI();
     renderAuditLog();
     renderReportPreview();
+    renderPipelineStatus();
+    renderSbom();
+    updateStatusChrome();
 
     updateScanMeta(appState.data.scanMeta);
+}
+
+function getPolicyStatus() {
+    const status = String(appState.data.policy?.pipeline_status || appState.data.policy?.statusLabel || 'UNKNOWN').toUpperCase();
+    return status === 'INITIALIZED' ? 'UNKNOWN' : status;
+}
+
+function statusBadgeClass(status) {
+    const normalized = String(status || '').toUpperCase();
+    if (normalized === 'PASSED' || normalized === 'COMPLETED' || normalized === 'PASS') return 'badge-low';
+    if (normalized === 'WARNING' || normalized === 'SKIPPED' || normalized === 'FALLBACK' || normalized === 'VALIDATION') return 'badge-medium';
+    if (normalized === 'BLOCKED' || normalized === 'FAILED' || normalized === 'FAIL') return 'badge-critical';
+    if (normalized === 'RUNNING') return 'badge-brand';
+    return 'badge-outline';
+}
+
+function updateStatusChrome() {
+    const policyStatus = getPolicyStatus();
+    const policy = appState.data.policy || {};
+    const status = appState.data.status || {};
+    const topStatus = document.getElementById('top-status-badge');
+    const topMode = document.getElementById('top-mode-badge');
+    const sidebarDot = document.getElementById('sidebar-policy-dot');
+    const sidebarLabel = document.getElementById('sidebar-policy-label');
+
+    const label = status.is_scanning ? 'Running' : policyStatus === 'UNKNOWN' ? 'No Scan' : policyStatus;
+    if (topStatus) {
+        topStatus.className = `badge ${statusBadgeClass(status.is_scanning ? 'RUNNING' : policyStatus)}`;
+        topStatus.textContent = label;
+    }
+    if (topMode) {
+        const strict = policy.strict_ci ? 'Strict CI' : 'Evidence mode';
+        topMode.className = 'badge badge-outline';
+        topMode.textContent = strict;
+    }
+    if (sidebarDot) {
+        sidebarDot.classList.toggle('blink', status.is_scanning || policyStatus === 'BLOCKED');
+        sidebarDot.style.background = policyStatus === 'BLOCKED' || policyStatus === 'FAILED'
+            ? 'var(--sev-critical)'
+            : policyStatus === 'WARNING'
+                ? 'var(--sev-medium)'
+                : policyStatus === 'PASSED'
+                    ? 'var(--sev-low)'
+                    : 'var(--text-muted)';
+    }
+    if (sidebarLabel) sidebarLabel.textContent = status.is_scanning ? 'Pipeline running' : label;
 }
 
 /**
@@ -398,12 +459,18 @@ function inferTargetUrl(target) {
 
 function openProjectBrowser() {
     const modal = document.getElementById('project-modal');
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+        modal.style.display = 'flex';
+        requestAnimationFrame(() => modal.classList.add('open'));
+    }
 }
 
 function closeProjectBrowser() {
     const modal = document.getElementById('project-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.classList.remove('open');
+        setTimeout(() => { modal.style.display = 'none'; }, 180);
+    }
 }
 
 function selectProject(projectPath) {
@@ -493,13 +560,27 @@ function updateExecutiveCards(s) {
         }
     }
 
-    // Critical Findings Card
-    const critEl = document.querySelector('.card-alert-red .stat-value.blink');
+    const critEl = document.getElementById('kpi-critical');
     if (critEl) critEl.innerText = s.critical;
+    const critLabel = document.getElementById('kpi-critical-label');
+    if (critLabel) critLabel.innerText = s.critical > 0 ? 'Action required' : 'No critical findings';
 
-    // Pending Triage Card
-    const pendingEl = document.getElementById('kpi-pending');
-    if (pendingEl) pendingEl.innerText = fCount('ai_triaged', true);
+    const quality = appState.data.quality || {};
+    const qualityStatuses = [quality.build?.status, quality.test?.status].filter(Boolean);
+    const failedQuality = qualityStatuses.filter(v => v === 'failed').length;
+    const skippedQuality = qualityStatuses.filter(v => v === 'skipped').length;
+    const qualityEl = document.getElementById('kpi-quality');
+    const qualityLabel = document.getElementById('kpi-quality-label');
+    if (qualityEl) {
+        qualityEl.innerText = failedQuality ? 'FAIL' : skippedQuality ? 'SKIP' : qualityStatuses.length ? 'PASS' : '--';
+        qualityEl.style.color = failedQuality ? 'var(--sev-critical)' : skippedQuality ? 'var(--sev-medium)' : 'var(--sev-low)';
+    }
+    if (qualityLabel) qualityLabel.innerText = `${quality.build?.mode || 'build?'} / ${quality.test?.mode || 'test?'}`;
+
+    const totalEl = document.getElementById('kpi-total');
+    const totalLabel = document.getElementById('kpi-total-label');
+    if (totalEl) totalEl.innerText = s.total;
+    if (totalLabel) totalLabel.innerText = `${s.high} high, ${s.medium} medium, ${s.low} low`;
 }
 
 function fCount(key, val) {
@@ -554,11 +635,16 @@ function renderMainCharts(s) {
 function updateChecklist() {
     const status = appState.data.status || {};
     const mapping = {
+        'build': 'build-status',
+        'test': 'test-status',
         'sast': 'sast-status',
         'sca': 'sca-status',
+        'secret': 'secret-status',
+        'sbom': 'sbom-status',
         'iac': 'iac-status',
         'dast': 'dast-status',
-        'api': 'api-status'
+        'api': 'api-status',
+        'policy': 'policy-status'
     };
 
     Object.keys(mapping).forEach(key => {
@@ -566,8 +652,9 @@ function updateChecklist() {
         if (!el) return;
         const state = status[key] || 'pending';
         if (state === 'running') el.innerHTML = '<i class="ph ph-circle-notch animate-spin" style="color: var(--brand-primary);"></i>';
-        else if (state === 'completed') el.innerHTML = '<i class="ph ph-check-circle" style="color: #4dff88;"></i>';
-        else el.innerHTML = '<i class="ph ph-circle" style="color: #666;"></i>';
+        else if (state === 'completed' || state === 'passed') el.innerHTML = '<i class="ph ph-check-circle" style="color: var(--sev-low);"></i>';
+        else if (state === 'failed') el.innerHTML = '<i class="ph ph-x-circle" style="color: var(--sev-critical);"></i>';
+        else el.innerHTML = '<i class="ph ph-circle" style="color: #94a3b8;"></i>';
     });
 }
 
@@ -576,13 +663,73 @@ function updateKPIs() {
     if (gateEl) {
         const passed = appState.data.policy.passed !== false;
         gateEl.innerText = appState.data.policy.statusLabel || (passed ? "PASSED" : "FAIL");
-        gateEl.style.color = passed ? '#4dff88' : '#ef4444';
+        gateEl.style.color = passed ? 'var(--sev-low)' : 'var(--sev-critical)';
     }
 
     // Mock KPIs for Demo
     document.getElementById('kpi-mttd').innerText = "1.2h";
     document.getElementById('kpi-mttr').innerText = "4.5h";
     document.getElementById('kpi-ver').innerText = "0.5%";
+}
+
+function stageLabel(stage) {
+    const status = stage?.status || 'unknown';
+    const mode = stage?.mode || 'unknown';
+    return `${status}${mode && mode !== status ? ` · ${mode}` : ''}`;
+}
+
+function renderPipelineStatus() {
+    const title = document.getElementById('pipeline-title');
+    const reason = document.getElementById('pipeline-reason');
+    const grid = document.getElementById('pipeline-stage-grid');
+    const policy = appState.data.policy || {};
+    const status = appState.data.status || {};
+    const quality = appState.data.quality || {};
+    const policyStatus = status.is_scanning ? 'RUNNING' : getPolicyStatus();
+
+    if (title) {
+        title.textContent = policyStatus === 'UNKNOWN' ? 'Pipeline Status' : `Pipeline ${policyStatus}`;
+        title.style.color = policyStatus === 'BLOCKED' || policyStatus === 'FAILED' ? 'var(--sev-critical)' : policyStatus === 'WARNING' ? 'var(--sev-medium)' : 'var(--sev-low)';
+    }
+    if (reason) reason.textContent = policy.block_reason || 'Run a scan to evaluate build, test, security, policy, audit, and report gates.';
+    if (!grid) return;
+
+    const stages = [
+        ['Build', stageLabel(quality.build || { status: status.build })],
+        ['Test', stageLabel(quality.test || { status: status.test })],
+        ['SAST', status.sast || 'pending'],
+        ['SCA', status.sca || 'pending'],
+        ['Secrets', status.secret || 'pending'],
+        ['IaC', status.iac || 'pending'],
+        ['DAST', status.dast || 'pending'],
+        ['Policy', status.policy || policyStatus.toLowerCase()]
+    ];
+
+    grid.innerHTML = stages.map(([name, state]) => `
+        <div class="stage-chip">
+            <span>${escapeHtml(name)}</span>
+            <span class="badge ${statusBadgeClass(state)}">${escapeHtml(state)}</span>
+        </div>
+    `).join('');
+}
+
+function renderSbom() {
+    const target = document.getElementById('sbom-data');
+    if (!target) return;
+    const sbom = appState.data.sbom || {};
+    if (!Object.keys(sbom).length) {
+        target.textContent = 'No SBOM has been generated yet.';
+        return;
+    }
+    const components = Array.isArray(sbom.components) ? sbom.components : [];
+    const summary = {
+        bomFormat: sbom.bomFormat,
+        specVersion: sbom.specVersion,
+        component_count: components.length,
+        tool: sbom.metadata?.tools?.components?.[0]?.name || 'unknown',
+        target: sbom.metadata?.component?.name || 'unknown'
+    };
+    target.textContent = JSON.stringify({ summary, sample_components: components.slice(0, 20) }, null, 2);
 }
 
 function renderFindingsList() {
@@ -603,28 +750,31 @@ function renderFindingsList() {
     const msg = document.getElementById('action-counts');
     if (msg) msg.innerText = `Detected ${filtered.length} vulnerabilities requiring triage.`;
 
-    container.innerHTML = filtered.map(f => `
-        <div class="finding-card ${f.severity.toLowerCase()}">
-            <div class="finding-header" onclick="toggleDetails('${f.id}')">
+    container.innerHTML = filtered.map((f, index) => {
+        const severity = String(f.severity || 'LOW').toUpperCase();
+        const safeId = escapeHtml(f.id || `finding-${index}`);
+        return `
+        <div class="finding-card ${severity.toLowerCase()}">
+            <div class="finding-header" onclick="toggleDetails('${safeId}')">
                 <div style="flex: 1;">
                     <div style="display: flex; gap: 8px; margin-bottom: 6px;">
-                        <span class="badge badge-${f.severity.toLowerCase()}">${f.severity}</span>
+                        <span class="badge badge-${severity.toLowerCase()}">${escapeHtml(severity)}</span>
                         ${f.status === 'AI_TRIAGED' ? '<span class="badge" style="background: rgba(245,158,11,0.1); color: #f59e0b;">AI TRIAGED</span>' : ''}
-                        <span class="badge" style="background: rgba(255,255,255,0.05); color: #888;">${f.source_tool || f.tool || 'Engine'}</span>
+                        <span class="badge badge-outline">${escapeHtml(f.source_tool || f.tool || 'Engine')}</span>
                     </div>
-                    <h4 style="margin: 0; font-size: 14px;">${f.title}</h4>
-                    <div style="font-size: 11px; color: #666; font-family: monospace; margin-top: 4px;">${formatPathWithLine(f)}</div>
+                    <h4 style="margin: 0; font-size: 14px;">${escapeHtml(f.title || 'Untitled finding')}</h4>
+                    <div style="font-size: 11px; color: #666; font-family: monospace; margin-top: 4px;">${escapeHtml(formatPathWithLine(f))}</div>
                 </div>
                 <div style="text-align: right; margin-right: 15px;">
-                    <div style="font-weight: 700; color: var(--sev-${f.severity.toLowerCase()});">CVSS ${formatCvss(f)}</div>
+                    <div style="font-weight: 700; color: var(--sev-${severity.toLowerCase()});">CVSS ${escapeHtml(formatCvss(f))}</div>
                 </div>
-                <i class="ph ph-caret-down" id="icon-${f.id}"></i>
+                <i class="ph ph-caret-down" id="icon-${safeId}"></i>
             </div>
-            <div id="details-${f.id}" class="finding-details" style="display: none; padding: 20px; border-top: 1px solid var(--border-light);">
+            <div id="details-${safeId}" class="finding-details" style="display: none; padding: 20px; border-top: 1px solid var(--border-light);">
                 ${renderFindingDetails(f)}
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 function toggleDetails(id) {
@@ -653,7 +803,7 @@ function renderAuditLog() {
 
 // ─── Actions ──────────────────────────────────────────────────
 async function triggerScan() {
-    console.log("[UI] Launching Autonomous Arsenal...");
+    console.log("[UI] Launching evidence-based pipeline...");
     const targetEl = document.getElementById('scanTarget');
     if (!targetEl) return console.error("Target input not found!");
 
@@ -677,7 +827,7 @@ async function triggerScan() {
     const btn = document.getElementById('launchBtn');
     const msg = document.getElementById('scan-status-msg');
     if (btn) btn.disabled = true;
-    if (msg) msg.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> PIPELINE LAUNCHED...';
+    if (msg) msg.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> Pipeline launched...';
     appState.data.findings = [];
     appState.data.scanMeta = {
         app_name: target.split('/').pop(),
@@ -755,12 +905,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (btn) {
                     btn.disabled = data.is_scanning;
                     if (data.is_scanning) {
-                        btn.innerHTML = '<i class="ph ph-circle-notch animate-spin" style="font-size: 22px;"></i> ENGINE SCANNING...';
+                        btn.innerHTML = '<i class="ph ph-circle-notch animate-spin" style="font-size: 22px;"></i> SCANNING...';
                         btn.style.background = 'linear-gradient(135deg, #444, #666)';
                         btn.style.boxShadow = '0 0 15px rgba(255, 255, 255, 0.1)';
                         btn.classList.add('pulse-active');
                     } else {
-                        btn.innerHTML = '<i class="ph-bold ph-rocket-launch" style="font-size: 22px;"></i> LAUNCH AUTONOMOUS SECURITY ARSENAL';
+                        btn.innerHTML = '<i class="ph-bold ph-rocket-launch" style="font-size: 22px;"></i> RUN EVIDENCE-BASED SECURITY PIPELINE';
                         btn.style.background = 'linear-gradient(135deg, #ff6b6b, #ff8e53)';
                         btn.style.boxShadow = '0 4px 15px rgba(255, 107, 107, 0.3)';
                         btn.classList.remove('pulse-active');
@@ -776,7 +926,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (msg) {
                     msg.innerHTML = data.is_scanning ?
-                        '<i class="ph ph-circle-notch animate-spin"></i> PIPELINE IN PROGRESS...' :
+                        '<i class="ph ph-circle-notch animate-spin"></i> Pipeline in progress...' :
                         '<i class="ph ph-check-circle" style="color: #4dff88;"></i> Pipeline Idle';
                 }
 

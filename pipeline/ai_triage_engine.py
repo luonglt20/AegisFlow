@@ -400,8 +400,11 @@ def call_groq_api(finding: dict) -> Optional[dict]:
         "response_format": {"type": "json_object"},
     }).encode("utf-8")
 
-    for attempt in range(3):
+    for attempt in range(5):
         try:
+            # Add a small delay between requests to respect rate limits
+            time.sleep(1.2)
+
             req = urllib.request.Request(
                 "https://api.groq.com/openai/v1/chat/completions",
                 data=data,
@@ -419,7 +422,7 @@ def call_groq_api(finding: dict) -> Optional[dict]:
         except urllib.error.HTTPError as exc:
             err_body = exc.read().decode("utf-8") if exc.fp else ""
             if exc.code == 429:
-                wait = (attempt + 1) * 5
+                wait = (attempt + 1) * 7
                 print(f"  [RATE LIMIT] Groq API rate limit reached. Waiting {wait}s...")
                 time.sleep(wait)
             elif exc.code == 401:
@@ -486,8 +489,8 @@ def main() -> None:
     if not findings:
         print(c("  [WARN] No findings to analyze.", YELLOW))
     else:
-        print(f"  [PARALLEL] Analyzing {len(findings)} findings using 10 concurrent workers...")
-        with ThreadPoolExecutor(max_workers=10) as executor:
+        print(f"  [PARALLEL] Analyzing {len(findings)} findings using 3 concurrent workers (Throttled Mode)...")
+        with ThreadPoolExecutor(max_workers=3) as executor:
             futures = [executor.submit(triage_finding, finding, ".", "REAL") for finding in findings]
             for future in futures:
                 future.result()

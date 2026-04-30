@@ -95,12 +95,12 @@
 
       <div style="padding: 20px; border-top: 1px solid var(--border-light); font-size: 12px; color: var(--text-muted);">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-          <div style="width: 8px; height: 8px; background: var(--sev-low); border-radius: 50%;"></div>
-          System Online
+          <div id="sidebar-system-dot" style="width: 8px; height: 8px; background: var(--sev-low); border-radius: 50%;"></div>
+          <span id="sidebar-system-label">System Online</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-          <div class="blink" style="width: 8px; height: 8px; background: var(--sev-critical); border-radius: 50%;"></div>
-          Pipeline Blocked
+          <div id="sidebar-policy-dot" style="width: 8px; height: 8px; background: var(--text-muted); border-radius: 50%;"></div>
+          <span id="sidebar-policy-label">No scan loaded</span>
         </div>
       </div>
     </aside>
@@ -117,8 +117,8 @@
           <div id="scan-meta" class="font-mono" style="font-size: 11px; color: var(--text-muted);">Scan: 2026-05-19T08:00:00Z · Branch: main</div>
         </div>
         <div style="display: flex; gap: 12px; align-items: center;">
-          <span class="badge badge-critical blink">Pipeline Blocked</span>
-          <span class="badge badge-outline">llama-3.3-70b Active</span>
+          <span id="top-status-badge" class="badge badge-outline">No Scan</span>
+          <span id="top-mode-badge" class="badge badge-outline">Local mode</span>
           <img src="https://ui-avatars.com/api/?name=Admin&background=ff6b00&color=fff&rounded=true&size=32" alt="User" />
         </div>
       </header>
@@ -153,25 +153,25 @@
           </div>
 
           <div class="grid-4" style="margin-bottom: 24px;">
-            <div class="card card-alert-red" style="text-align: center;">
+            <div class="card card-alert-orange" style="text-align: center;">
               <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Security Score</div>
               <div id="score-value" class="stat-value" style="color: var(--sev-critical);">--<span style="font-size: 16px; color: var(--text-muted);">/100</span></div>
               <div id="grade-badge" class="badge badge-critical">CALCULATING...</div>
             </div>
             <div class="card card-alert-red" style="text-align: center;">
               <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Critical Findings</div>
-              <div class="stat-value blink" style="color: var(--sev-critical);">3</div>
-              <div style="font-size: 12px; color: var(--sev-critical); font-weight: 500;">Action Required</div>
+              <div id="kpi-critical" class="stat-value" style="color: var(--sev-critical);">--</div>
+              <div id="kpi-critical-label" style="font-size: 12px; color: var(--sev-critical); font-weight: 500;">Waiting for scan</div>
             </div>
             <div class="card card-alert-orange" style="text-align: center;">
-              <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Pending Triage</div>
-              <div class="stat-value" style="color: var(--brand-primary);" id="kpi-pending">9</div>
-              <div style="font-size: 12px; color: var(--text-muted); font-weight: 500;">AI Pre-filtered</div>
+              <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Quality Gate</div>
+              <div class="stat-value" style="color: var(--brand-primary);" id="kpi-quality">--</div>
+              <div id="kpi-quality-label" style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Build/Test evidence</div>
             </div>
             <div class="card" style="text-align: center; border-bottom: 3px solid var(--sev-low);">
-              <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">SLA Breaches</div>
-              <div class="stat-value" style="color: var(--sev-low);">0</div>
-              <div style="font-size: 12px; color: var(--text-muted); font-weight: 500;">All within limits</div>
+              <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Total Findings</div>
+              <div id="kpi-total" class="stat-value" style="color: var(--sev-low);">--</div>
+              <div id="kpi-total-label" style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Across scanners</div>
             </div>
           </div>
 
@@ -214,8 +214,8 @@
         <!-- 2b. Scanner Control -->
         <div id="tab-scanner" class="tab-panel">
           <div class="panel-header">
-            <h2 class="panel-title" style="font-size: 24px; margin-bottom: 4px;">Scanner Intelligence Hub</h2>
-            <p class="panel-subtitle" style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Multi-dimensional vulnerability detection matrix across the entire lifecycle.</p>
+            <h2 class="panel-title" style="font-size: 24px; margin-bottom: 4px;">Scan Control</h2>
+            <p class="panel-subtitle" style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Select a target, run build/test evidence, then execute security scanners and policy gate.</p>
           </div>
 
           <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
@@ -341,11 +341,11 @@
                     <button id="launchBtn" onclick="triggerScan()"
                             style="width: 100%; background: linear-gradient(135deg, #ff6b6b, #ff8e53); border: none; border-radius: 10px; padding: 16px; color: white; font-size: 16px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3); transition: all 0.3s ease;">
                         <i class="ph-bold ph-rocket-launch" style="font-size: 22px;"></i>
-                        LAUNCH AUTONOMOUS SECURITY ARSENAL
+                        RUN EVIDENCE-BASED SECURITY PIPELINE
                     </button>
 
                     <div id="scan-status-msg" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 12px; font-weight: 500; text-align: center; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 8px;">
-                        <i class="ph ph-circle-notch animate-spin"></i> Initializing health sensors...
+                        <i class="ph ph-check-circle"></i> Ready to scan
                     </div>
                 </div>
             </div>
@@ -374,8 +374,8 @@
             </div>
             <div class="card" style="display: flex; align-items: center; justify-content: center; background: rgba(77, 255, 136, 0.05);">
                <div style="text-align: center;">
-                 <div style="font-size: 20px; font-weight: 700; color: #4DFF88;">98.2%</div>
-                 <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Scan Coverage</div>
+                 <div style="font-size: 20px; font-weight: 700; color: var(--sev-low);">Evidence</div>
+                 <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">Build/Test + AppSec</div>
                </div>
             </div>
           </div>
@@ -389,8 +389,9 @@
            </div>
            <div class="card" style="text-align: center; padding: 60px 20px;">
                <div style="font-size: 48px; margin-bottom: 16px;">🛑</div>
-               <h3 style="font-size: 20px; color: var(--sev-critical); margin-bottom: 8px;">Pipeline Blocked by Policy Engine</h3>
-               <p style="color: var(--text-muted); max-width: 500px; margin: 0 auto;">3 Critical findings detected. Merging to protected branch 'main' is denied until findings are triaged and either fixed or granted an exception.</p>
+               <h3 id="pipeline-title" style="font-size: 20px; color: var(--sev-critical); margin-bottom: 8px;">Pipeline Status</h3>
+               <p id="pipeline-reason" style="color: var(--text-muted); max-width: 620px; margin: 0 auto;">Run a scan to evaluate build, test, security, policy, audit, and report gates.</p>
+               <div id="pipeline-stage-grid" class="stage-grid" style="margin-top: 28px;"></div>
                <button class="btn btn-primary" style="margin-top: 24px;" onclick="switchTab('override')">Request Override</button>
            </div>
         </div>

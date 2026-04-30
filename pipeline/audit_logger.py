@@ -9,6 +9,7 @@ Records every pipeline execution, status, and summary findings.
 import json
 import os
 import sys
+import hashlib
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -35,11 +36,13 @@ def log_event():
     # 2. Get status from policy engine output
     status = "UNKNOWN"
     summary = {}
+    quality_summary = {}
     if POLICY_FILE.exists():
         try:
             policy_data = json.loads(POLICY_FILE.read_text())
             status = policy_data.get("pipeline_status", "UNKNOWN")
             summary = policy_data.get("findings_summary", {})
+            quality_summary = policy_data.get("quality_summary", {})
         except: pass
 
     # 3. Create audit record
@@ -50,8 +53,10 @@ def log_event():
         "pipeline_id": pipeline_id,
         "outcome": status,
         "findings_summary": summary,
-        "integrity_hash": "sha256:" + os.urandom(16).hex() # Mock hash for immutability demo
+        "quality_summary": quality_summary,
     }
+    canonical = json.dumps(record, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    record["integrity_hash"] = "sha256:" + hashlib.sha256(canonical).hexdigest()
 
     # 4. Append to log
     logs = []

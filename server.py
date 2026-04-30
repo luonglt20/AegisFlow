@@ -119,18 +119,26 @@ class AegisHandler(http.server.SimpleHTTPRequestHandler):
 
         empty_files = {
             "audit_log.json": [],
+            "build_report.json": {"stage": "build", "status": "pending", "mode": "pending", "details": []},
+            "test_report.json": {"stage": "test", "status": "pending", "mode": "pending", "details": []},
+            "sbom.json": {},
             "policy_result.json": {"passed": True, "details": [], "status": "RUNNING"},
             "status.json": {
                 "is_scanning": True,
                 "target": target,
                 "target_url": target_url,
                 "pipeline_state": "RUNNING",
-                "sast": "running",
+                "build": "running",
+                "test": "pending",
+                "sast": "pending",
                 "sca": "pending",
                 "sbom": "pending",
                 "secret": "pending",
                 "iac": "pending",
-                "dast": "pending"
+                "dast": "pending",
+                "policy": "pending",
+                "audit": "pending",
+                "report": "pending"
             }
         }
         for filename, content in empty_files.items():
@@ -148,10 +156,14 @@ class AegisHandler(http.server.SimpleHTTPRequestHandler):
                 print(f"[SHELL] {line.strip()}")
             process.wait()
 
+            print("[AGENT] Syncing results to dashboard/data...")
+            subprocess.run(["cp", "-r", "security-results/.", "dashboard/data/"], check=False)
+
+            policy_path = os.path.join(os.getcwd(), "security-results", "policy_result.json")
             if process.returncode == 0:
-                print("[AGENT] Syncing results to dashboard/data...")
-                subprocess.run(["cp", "-r", "security-results/.", "dashboard/data/"], check=False)
                 print("[AGENT] Pipeline completed successfully.")
+            elif os.path.exists(policy_path):
+                print(f"[AGENT] Pipeline finished with policy exit code {process.returncode}; preserving policy result.")
             else:
                 print(f"[ERROR] Pipeline exited with code {process.returncode}")
                 write_dashboard_file("status.json", {
@@ -159,12 +171,17 @@ class AegisHandler(http.server.SimpleHTTPRequestHandler):
                     "target": target,
                     "target_url": target_url,
                     "pipeline_state": "FAILED",
+                    "build": "unknown",
+                    "test": "unknown",
                     "sast": "unknown",
                     "sca": "unknown",
                     "sbom": "unknown",
                     "secret": "unknown",
                     "iac": "unknown",
-                    "dast": "unknown"
+                    "dast": "unknown",
+                    "policy": "failed",
+                    "audit": "unknown",
+                    "report": "unknown"
                 })
                 write_dashboard_file("policy_result.json", {
                     "passed": False,
@@ -205,6 +222,9 @@ if __name__ == "__main__":
     default_files = {
         "full_report_triaged.json": {"scan_metadata": {"app_name": "AegisFlow Skeleton", "pipeline_run_id": "init"}, "findings": []},
         "policy_result.json": {"status": "INITIALIZED", "violated_policies": []},
+        "build_report.json": {"stage": "build", "status": "pending", "mode": "pending", "details": []},
+        "test_report.json": {"stage": "test", "status": "pending", "mode": "pending", "details": []},
+        "sbom.json": {},
         "audit_log.json": []
     }
 

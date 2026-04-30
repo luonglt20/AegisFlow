@@ -42,6 +42,9 @@ echo "  [*] Mode: Dynamic-to-Static Integrated"
 # ─── Timestamp ───────────────────────────────────────────────────────────────
 START_TIME=$(date +%s 2>/dev/null || echo "0")
 SCAN_DATE=$(date -u "+%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "N/A")
+STRICT_CI="${STRICT_CI:-false}"
+STAGE_FAILURES=0
+RUN_STEP_EXIT=0
 
 # ─── Banner ──────────────────────────────────────────────────────────────────
 echo ""
@@ -82,8 +85,11 @@ run_step() {
 
     if "${PYTHON}" "${script}"; then
         echo -e "${GREEN}  ✓ Step ${step_num} completed successfully${RESET}"
+        RUN_STEP_EXIT=0
     else
-        echo -e "${RED}  ✗ Step ${step_num} failed (script: ${script})${RESET}" >&2
+        RUN_STEP_EXIT=$?
+        STAGE_FAILURES=$(( STAGE_FAILURES + 1 ))
+        echo -e "${RED}  ✗ Step ${step_num} failed (script: ${script}, exit: ${RUN_STEP_EXIT})${RESET}" >&2
         echo -e "${YELLOW}  Pipeline will continue with available data...${RESET}"
     fi
     echo ""
@@ -92,28 +98,31 @@ run_step() {
 # ─── Pipeline Steps ──────────────────────────────────────────
 
 # Initial state
-"${PYTHON}" pipeline/update_status.py sast running sca pending iac pending dast pending secret pending
+"${PYTHON}" pipeline/update_status.py build running test pending sast pending sca pending iac pending dast pending secret pending sbom pending policy pending report pending
 
 run_step "1" "Build Validation Stage"              "pipeline/build_target.py"
+"${PYTHON}" pipeline/update_status.py build "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" test running
+
 run_step "2" "Test Validation Stage"               "pipeline/test_target.py"
+"${PYTHON}" pipeline/update_status.py test "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" sast running
 
 run_step "3" "SAST Scanning  (Semgrep Bridge)"     "pipeline/scan_sast.py"
-"${PYTHON}" pipeline/update_status.py sast completed sca running
+"${PYTHON}" pipeline/update_status.py sast "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" sca running
 
 run_step "4" "SCA Scanning   (Trivy Bridge)"       "pipeline/scan_sca.py"
-"${PYTHON}" pipeline/update_status.py sca completed sbom running
+"${PYTHON}" pipeline/update_status.py sca "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" sbom running
 
 run_step "5" "SBOM Generation (CycloneDX Bridge)"  "pipeline/scan_sbom.py"
-"${PYTHON}" pipeline/update_status.py sbom completed secret running
+"${PYTHON}" pipeline/update_status.py sbom "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" secret running
 
 run_step "6" "Secret Scanning (Gitleaks Bridge)"   "pipeline/scan_secret.py"
-"${PYTHON}" pipeline/update_status.py secret completed iac running
+"${PYTHON}" pipeline/update_status.py secret "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" iac running
 
 run_step "7" "IaC Scanning    (Checkov Bridge)"    "pipeline/scan_iac.py"
-"${PYTHON}" pipeline/update_status.py iac completed dast running
+"${PYTHON}" pipeline/update_status.py iac "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" dast running
 
 run_step "8" "DAST Scanning   (Nuclei Bridge)"     "pipeline/scan_dast.py"
-"${PYTHON}" pipeline/update_status.py dast completed
+"${PYTHON}" pipeline/update_status.py dast "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)"
 
 echo -e "${DIM}  [*] Copying scan results to ingestion directory...${RESET}"
 mkdir -p "$ROOT_DIR/ingest"
@@ -123,25 +132,29 @@ run_step "9" "Consolidating Security Reports"      "pipeline/report_generator.py
 
 run_step "10" "Generating AI Triage & Analysis"     "pipeline/ai_triage_engine.py"
 
+# ─── Policy Gate ─────────────────────────────────────────────────────────────
+"${PYTHON}" pipeline/update_status.py policy running
+echo -e "${BOLD}[11/13] Evaluating Security Policy Gate${RESET}"
+echo -e "${DIM}─────────────────────────────────────────────────────────────${RESET}"
+
+POLICY_EXIT=0
+"${PYTHON}" pipeline/policy_engine.py || POLICY_EXIT=$?
+"${PYTHON}" pipeline/update_status.py policy "$([[ ${POLICY_EXIT} -eq 0 ]] && echo completed || echo failed)" audit running
+
+run_step "12" "Audit Logging & Traceability"        "pipeline/audit_logger.py"
+"${PYTHON}" pipeline/update_status.py audit "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" report running
+
+run_step "13" "Generating HTML/PDF Case Study"      "pipeline/generate_report.py"
+"${PYTHON}" pipeline/update_status.py report "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)"
+
 # [CRITICAL] Sync findings to Dashboard data folder
 DASHBOARD_DATA="$ROOT_DIR/dashboard/data"
 mkdir -p "$DASHBOARD_DATA"
 cp -f "$ROOT_DIR/security-results"/*.json "$DASHBOARD_DATA/" 2>/dev/null || true
 echo -e "  ✓ Sync: security-results -> $DASHBOARD_DATA"
 
-run_step "11" "Generating HTML/PDF Case Study"      "pipeline/generate_report.py"
-
-run_step "12" "Audit Logging & Traceability"        "pipeline/audit_logger.py"
-
 # ─── Final State ─────────────────────────────────────────────────────────────
-"${PYTHON}" pipeline/update_status.py is_scanning false
-
-# ─── Policy Gate ─────────────────────────────────────────────────────────────
-echo -e "${BOLD}[13/13] Evaluating Security Policy Gate${RESET}"
-echo -e "${DIM}─────────────────────────────────────────────────────────────${RESET}"
-
-POLICY_EXIT=0
-"${PYTHON}" pipeline/policy_engine.py || POLICY_EXIT=$?
+"${PYTHON}" pipeline/update_status.py is_scanning false stage_failures "${STAGE_FAILURES}"
 
 # ─── Summary ─────────────────────────────────────────────────────────────────
 END_TIME=$(date +%s 2>/dev/null || echo "0")
