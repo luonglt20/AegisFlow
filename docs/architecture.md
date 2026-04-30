@@ -8,6 +8,50 @@ AegisFlow is divided into three main architectural pillars:
 
 These pillars communicate via JSON-based file synchronization within a shared Docker volume, ensuring decoupling between the backend heavy-lifting and the frontend rendering.
 
+```mermaid
+graph TD
+    User([User / SecEng]) -->|1. Click Scan| Dashboard
+
+    subgraph UI [Frontend Layer]
+        Dashboard[Dashboard App JS]
+    end
+
+    subgraph ServerLayer [API Gateway]
+        Server[server.py]
+    end
+
+    subgraph PipelineLayer [Core Pipeline]
+        Orchestrator[run_pipeline.sh]
+        Scanners[Semgrep, Trivy, Checkov, Nuclei]
+        ReportGen[report_generator.py]
+        AIEngine[ai_triage_engine.py]
+        PolicyEngine[policy_engine.py]
+    end
+
+    subgraph Storage [Local File System]
+        ResultsDir[(security-results/)]
+    end
+
+    Dashboard -->|POST /api/scan| Server
+    Server -->|Spawns Subprocess| Orchestrator
+
+    Orchestrator -->|Executes sequentially| Scanners
+    Scanners -->|Raw JSON/SARIF| ResultsDir
+
+    Orchestrator -->|Triggers| ReportGen
+    ReportGen -->|Reads Raw, Writes full_report.json| ResultsDir
+
+    Orchestrator -->|Triggers| AIEngine
+    AIEngine -->|Reads full_report, Writes triaged| ResultsDir
+    AIEngine -.->|External API| Groq[Groq LLaMA 3]
+
+    Orchestrator -->|Triggers| PolicyEngine
+    PolicyEngine -->|Writes policy_result.json| ResultsDir
+
+    Server -.->|Syncs Data| Dashboard
+    Dashboard -->|Polls UI updates| Dashboard
+```
+
 ## Directory Structure
 ```text
 AegisFlow/

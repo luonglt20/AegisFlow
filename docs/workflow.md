@@ -9,6 +9,51 @@ When a scan is triggered via the Dashboard, `server.py` sets up the environment:
 - Wipes the `security-results/` directory to ensure a clean state.
 - Initializes a `status.json` indicating the pipeline has started.
 
+```mermaid
+sequenceDiagram
+    participant User
+    participant Server as server.py
+    participant Orch as run_pipeline.sh
+    participant Scanners as Security Scanners
+    participant AI as ai_triage_engine.py
+    participant Policy as policy_engine.py
+    participant Dash as Dashboard UI
+
+    User->>Server: POST /api/scan {target}
+    Server->>Server: Init Status (running)
+    Server->>Orch: Spawn Process
+    Server-->>User: HTTP 202 Accepted
+
+    rect rgb(240, 248, 255)
+        Note right of Orch: Phase 1: Scanning
+        Orch->>Scanners: Run SAST, SCA, IaC, etc.
+        Scanners-->>Orch: Write Raw JSONs
+    end
+
+    rect rgb(255, 240, 245)
+        Note right of Orch: Phase 2: Consolidation
+        Orch->>Orch: run report_generator.py
+        Orch-->>Orch: Output: full_report.json
+    end
+
+    rect rgb(240, 255, 240)
+        Note right of Orch: Phase 3: AI Triage
+        Orch->>AI: run ai_triage_engine.py
+        AI-->>Orch: Output: full_report_triaged.json
+    end
+
+    rect rgb(255, 250, 240)
+        Note right of Orch: Phase 4: Governance
+        Orch->>Policy: run policy_engine.py
+        Policy-->>Orch: Output: policy_result.json
+    end
+
+    Orch-->>Server: Exit (0=Pass, 1=Fail)
+    Server->>Server: Copy results to dashboard/data/
+    Dash->>Server: Polls status.json
+    Server-->>Dash: UI Updates & Renders Charts
+```
+
 ## The 13-Step Pipeline (`run_pipeline.sh`)
 
 1. **Build Validation Stage (`build_target.py`)**
