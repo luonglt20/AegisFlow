@@ -1,0 +1,100 @@
+name: AegisFlow CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUNBUFFERED: "1"
+  SCAN_TARGET: ${{ github.workspace }}/real-apps/NodeGoat
+  BUILD_USER: github-actions
+  STRICT_CI: "false"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Prepare directories
+        run: mkdir -p security-results dashboard/data ingest
+
+      - name: Run build stage
+        run: python3 pipeline/build_target.py
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-report
+          path: security-results/build_report.json
+          if-no-files-found: error
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-report
+          path: security-results
+
+      - name: Prepare directories
+        run: mkdir -p security-results dashboard/data ingest
+
+      - name: Run test stage
+        run: python3 pipeline/test_target.py
+
+      - name: Upload test artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: security-results/test_report.json
+          if-no-files-found: error
+
+  security:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.22"
+
+      - name: Restore Python cache
+        uses: actions/cache@v4
+        with:
