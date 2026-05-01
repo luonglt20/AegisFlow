@@ -94,7 +94,7 @@ jobs:
               print("Pipeline status:", data.get("pipeline_status"))
               print("Reason:", data.get("block_reason"))
               print("Findings summary:", data.get("findings_summary"))
-          PY
+PY
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
