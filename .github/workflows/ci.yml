@@ -82,19 +82,13 @@ jobs:
 
       - name: Print policy summary
         run: |
-          python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          path = Path("security-results/policy_result.json")
-          if not path.exists():
-              print("No policy_result.json generated.")
-          else:
-              data = json.loads(path.read_text(encoding="utf-8"))
-              print("Pipeline status:", data.get("pipeline_status"))
-              print("Reason:", data.get("block_reason"))
-              print("Findings summary:", data.get("findings_summary"))
-PY
+          if [ ! -f "security-results/policy_result.json" ]; then
+            echo "No policy_result.json generated."
+          else
+            echo "Pipeline status: $(jq -r '.pipeline_status' security-results/policy_result.json)"
+            echo "Reason: $(jq -r '.block_reason' security-results/policy_result.json)"
+            echo "Findings summary: $(jq -c '.findings_summary' security-results/policy_result.json)"
+          fi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
