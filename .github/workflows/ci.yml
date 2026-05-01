@@ -40,7 +40,13 @@ jobs:
           go-version: "1.22"
 
       - name: Prepare directories
-        run: mkdir -p security-results dashboard/data ingest "$HOME/.local/bin"
+        run: mkdir -p security-results dashboard/data ingest "$HOME/.local/bin" real-apps
+
+      - name: Clone target application
+        run: |
+          if [ ! -d "real-apps/NodeGoat" ]; then
+            git clone https://github.com/OWASP/NodeGoat.git real-apps/NodeGoat
+          fi
 
       - name: Install Python dependencies
         run: |
