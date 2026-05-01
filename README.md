@@ -21,7 +21,7 @@ This repository is structured to satisfy the mandatory submission package:
 
 This repo covers Task 1, Task 2, Task 3, Task 4, and Task 5.
 
-- Task 1: CI/CD pipeline with explicit `build`, `test`, `security`, and `report` stages in [.gitlab-ci.yml](/Users/toilaluongg/Desktop/AegisFlow-main/.gitlab-ci.yml:1), [.circleci/config.yml](/Users/toilaluongg/Desktop/AegisFlow-main/.circleci/config.yml:1), and [.github/workflows/ci.yml](/Users/toilaluongg/Desktop/AegisFlow-main/.github/workflows/ci.yml:1).
+- Task 1: CI/CD pipeline with explicit `build`, `test`, `security`, and `report` stages in [.gitlab-ci.yml](/Users/toilaluongg/Desktop/AegisFlow-main/.gitlab-ci.yml:1) and [.github/workflows/ci.yml](/Users/toilaluongg/Desktop/AegisFlow-main/.github/workflows/ci.yml:1).
 - Task 2: SCA, IaC, container-oriented security, secrets scanning, and SBOM generation.
 - Task 3: policy enforcement, dashboard reporting, SLA handling, exception workflow, and auditability.
 - Task 4: pipeline security analysis and mitigations, including secret handling, least privilege, and supply-chain guardrails.
@@ -72,29 +72,14 @@ make pipeline
 make down
 ```
 
-## CircleCI
-
-This repository also includes a CircleCI pipeline in [.circleci/config.yml](/Users/toilaluongg/Desktop/AegisFlow-main/.circleci/config.yml:1).
-
-- `build`: runs `pipeline/build_target.py`
-- `test`: runs `pipeline/test_target.py`
-- `security`: installs scanners and runs `pipeline/run_pipeline.sh`
-- `report`: refreshes `DevSecOps_CaseStudy_Report.html`
-- `policy_gate`: fails the workflow when the security policy blocks the target
-
-The default CircleCI target is `real-apps/NodeGoat`, matching the sample report artifacts already checked into the repository.
-
 ## GitHub Actions
 
 This repository also includes a GitHub Actions workflow in [.github/workflows/ci.yml](/Users/toilaluongg/Desktop/AegisFlow-main/.github/workflows/ci.yml:1).
 
-- `build`: runs `pipeline/build_target.py`
-- `test`: runs `pipeline/test_target.py`
-- `security`: installs scanners and runs `pipeline/run_pipeline.sh`
-- `report`: refreshes `DevSecOps_CaseStudy_Report.html`
-- `policy_gate`: fails the workflow when the security policy blocks the target
-
-The workflow runs on `push`, `pull_request`, and `workflow_dispatch`, and uses `real-apps/NodeGoat` as the default CI target so the generated artifacts stay aligned with the sample case-study report.
+- One sequential job runs `build`, `test`, `security`, and `report`
+- Artifacts are always uploaded even when the security policy records blocked findings
+- The default target is `real-apps/NodeGoat`, matching the sample case-study report
+The workflow runs on `push`, `pull_request`, and `workflow_dispatch`.
 
 ## Important Artifacts
 

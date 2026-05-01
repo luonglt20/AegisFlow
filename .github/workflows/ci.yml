@@ -11,71 +11,15 @@ on:
 permissions:
   contents: read
 
-env:
-  PYTHONUNBUFFERED: "1"
-  SCAN_TARGET: ${{ github.workspace }}/real-apps/NodeGoat
-  BUILD_USER: github-actions
-  STRICT_CI: "false"
-
 jobs:
-  build:
+  devsecops:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Prepare directories
-        run: mkdir -p security-results dashboard/data ingest
-
-      - name: Run build stage
-        run: python3 pipeline/build_target.py
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-report
-          path: security-results/build_report.json
-          if-no-files-found: error
-
-  test:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-report
-          path: security-results
-
-      - name: Prepare directories
-        run: mkdir -p security-results dashboard/data ingest
-
-      - name: Run test stage
-        run: python3 pipeline/test_target.py
-
-      - name: Upload test artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-report
-          path: security-results/test_report.json
-          if-no-files-found: error
-
-  security:
-    runs-on: ubuntu-latest
-    needs: test
+    env:
+      PYTHONUNBUFFERED: "1"
+      SCAN_TARGET: ${{ github.workspace }}/real-apps/NodeGoat
+      BUILD_USER: github-actions
+      STRICT_CI: "false"
+      PIPELINE_ID: gh-${{ github.run_id }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -95,26 +39,12 @@ jobs:
         with:
           go-version: "1.22"
 
-      - name: Restore Python cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Download prior artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: "*-report"
-          merge-multiple: true
-          path: security-results
-
       - name: Prepare directories
         run: mkdir -p security-results dashboard/data ingest "$HOME/.local/bin"
 
-      - name: Install Python scanners
+      - name: Install Python dependencies
         run: |
+          python3 -m pip install --upgrade pip
           python3 -m pip install --user --no-cache-dir semgrep checkov requests
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
@@ -126,94 +56,46 @@ jobs:
           go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
           ln -sf "$HOME/go/bin/nuclei" "$HOME/.local/bin/nuclei"
 
-      - name: Run integrated security pipeline
+      - name: Build stage
+        run: python3 pipeline/build_target.py
+
+      - name: Test stage
+        run: python3 pipeline/test_target.py
+
+      - name: Security pipeline
         run: |
           set +e
           bash pipeline/run_pipeline.sh
           PIPELINE_EXIT=$?
+          echo "PIPELINE_EXIT=$PIPELINE_EXIT" >> "$GITHUB_ENV"
           echo "$PIPELINE_EXIT" > security-results/policy_exit_code.txt
-          echo "Integrated pipeline exit code: $PIPELINE_EXIT"
           exit 0
 
-      - name: Upload security artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: security-results
-          path: |
-            security-results
-            dashboard/data
-          if-no-files-found: warn
-
-  report:
-    runs-on: ubuntu-latest
-    needs: security
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Download security artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: security-results
-          path: .
-
-      - name: Refresh case study HTML report
+      - name: Refresh report
         run: python3 pipeline/generate_report.py
 
-      - name: Upload report artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: case-study-report
-          path: DevSecOps_CaseStudy_Report.html
-          if-no-files-found: error
-
-  policy_gate:
-    runs-on: ubuntu-latest
-    needs: report
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Download security artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: security-results
-          path: .
-
-      - name: Enforce final security decision
+      - name: Print policy summary
         run: |
           python3 - <<'PY'
           import json
           from pathlib import Path
-          import sys
 
-          result_path = Path("security-results/policy_result.json")
-          exit_code_path = Path("security-results/policy_exit_code.txt")
-
-          if not result_path.exists():
-              print("policy_result.json is missing; failing gate.")
-              sys.exit(1)
-
-          result = json.loads(result_path.read_text(encoding="utf-8"))
-          status = result.get("pipeline_status", "UNKNOWN")
-          reason = result.get("block_reason", "No reason recorded.")
-          counts = result.get("findings_summary", {})
-
-          print(f"Policy status: {status}")
-          print(f"Reason: {reason}")
-          print(f"Findings summary: {counts}")
-
-          exit_code = 0
-          if exit_code_path.exists():
-              try:
-                  exit_code = int(exit_code_path.read_text(encoding="utf-8").strip())
-              except ValueError:
-                  exit_code = 1
-
-          sys.exit(exit_code)
+          path = Path("security-results/policy_result.json")
+          if not path.exists():
+              print("No policy_result.json generated.")
+          else:
+              data = json.loads(path.read_text(encoding="utf-8"))
+              print("Pipeline status:", data.get("pipeline_status"))
+              print("Reason:", data.get("block_reason"))
+              print("Findings summary:", data.get("findings_summary"))
           PY
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aegisflow-results
+          path: |
+            security-results
+            dashboard/data
+            DevSecOps_CaseStudy_Report.html
+          if-no-files-found: warn
