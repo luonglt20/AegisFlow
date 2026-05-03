@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>DevSecOps Case Study Report</title>
+  <style>
+    @page { size: A4; margin: 10mm; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #172033;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 8.35pt;
+      line-height: 1.23;
+      background: #ffffff;
+    }
+    .page {
+      page-break-after: always;
+      min-height: auto;
+      padding: 0;
+      position: relative;
+    }
+    .page:last-child { page-break-after: auto; }
+    .topline {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #526071;
+      border-bottom: 1px solid #cbd5e1;
+      padding-bottom: 5px;
+      margin-bottom: 6px;
+      font-size: 8pt;
+    }
+    h1, h2, h3 { color: #0f172a; margin: 0; }
+    h1 { font-size: 20pt; line-height: 1.04; letter-spacing: 0; }
+    h2 {
+      font-size: 11.5pt;
+      margin-top: 8px;
+      padding-bottom: 2px;
+      border-bottom: 1px solid #cbd5e1;
+    }
+    h3 { font-size: 9pt; margin-top: 6px; }
+    p { margin: 3px 0; }
+    ul, ol { margin: 3px 0 5px 15px; padding: 0; }
+    li { margin: 1px 0; }
+    code {
+      font-family: "Courier New", monospace;
+      font-size: 7.8pt;
+      color: #0f3d5e;
+      background: #eef6fb;
+      padding: 1px 3px;
+      border-radius: 3px;
+    }
+    .hero {
+      margin: 7px 0 6px;
+      padding: 7px 9px;
+      border: 1px solid #b9c7d6;
+      border-left: 5px solid #2563eb;
+      background: #f8fafc;
+    }
+    .muted { color: #526071; }
+    .grid-4, .grid-3, .grid-2 { display: grid; gap: 5px; margin: 5px 0; }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .box {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 5px 6px;
+      background: #ffffff;
+    }
+    .metric {
+      font-size: 15pt;
+      font-weight: 700;
+      color: #1d4ed8;
+      line-height: 1;
+      margin-bottom: 3px;
+    }
+    .flow {
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 5px;
+      background: #f8fafc;
+      font-family: "Courier New", monospace;
+      font-size: 7.45pt;
+      white-space: pre-wrap;
+      margin: 6px 0;
+    }
+    table { width: 100%; border-collapse: collapse; margin: 4px 0 5px; }
+    th, td {
+      border: 1px solid #cbd5e1;
+      padding: 3px 4px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th { background: #e8eef6; color: #0f172a; font-weight: 700; }
+    .tag {
+      display: inline-block;
+      min-width: 48px;
+      text-align: center;
+      padding: 1px 5px;
+      border-radius: 999px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 7pt;
+    }
+    .critical { background: #b91c1c; }
+    .high { background: #c2410c; }
+    .medium { background: #a16207; }
+    .low { background: #15803d; }
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      color: #64748b;
+      border-top: 1px solid #cbd5e1;
+      margin-top: 6px;
+      padding-top: 5px;
+      font-size: 7.7pt;
+    }
+  </style>
+</head>
+<body>
+  <section class="page">
+    <div class="topline"><span>AegisFlow - DevSecOps/AppSec Case Study</span><span>Trang 1/5</span></div>
+    <h1>AegisFlow DevSecOps Framework</h1>
+    <div class="hero">
+      <p><strong>Mục tiêu:</strong> chứng minh một pipeline DevSecOps chạy local bằng Docker, có scan bảo mật, policy gate, dashboard và tài liệu nộp bài trong một repository duy nhất.</p>
+      <p><strong>Phạm vi:</strong> Task 1-4 chạy trên cùng ứng dụng demo, cùng môi trường <code>docker-compose.yml</code>, cùng pipeline <code>pipeline/run_pipeline.sh</code>. Task 5 là threat model cho một hệ thống riêng theo đúng yêu cầu đề bài.</p>
+    </div>
+
+    <div class="grid-4">
+      <div class="box"><div class="metric">5</div><strong>Task covered</strong><br><span class="muted">Task 1, 2, 3, 4, 5</span></div>
+      <div class="box"><div class="metric">112</div><strong>Total findings</strong><br><span class="muted">Theo report mẫu hiện tại</span></div>
+      <div class="box"><div class="metric">15</div><strong>Critical</strong><br><span class="muted">Policy đang BLOCK</span></div>
+      <div class="box"><div class="metric">1</div><strong>Docker env</strong><br><span class="muted">Chạy local thống nhất</span></div>
+    </div>
+
+    <h2>1. Mô hình hệ thống</h2>
+    <div class="flow">Reviewer
+  -> docker compose up --build
+  -> AegisFlow Dashboard :58081
+  -> server.py /api/scan
+  -> pipeline/run_pipeline.sh
+  -> Build -> Test -> SAST -> SCA -> SBOM -> Secret -> IaC -> DAST -> Report -> Policy
+  -> security-results/*.json
+  -> dashboard/data/*.json
+  -> DevSecOps_CaseStudy_Report.pdf</div>
+    <p><strong>Thành phần chính:</strong> <code>dashboard/</code> là giao diện xem kết quả; <code>server.py</code> nhận yêu cầu scan; <code>pipeline/</code> chứa từng scanner bridge; <code>security-results/</code> là nơi sinh artifact JSON; <code>real-apps/</code> chứa ứng dụng mẫu để scan.</p>
+
+    <h2>2. Hướng dẫn chạy demo</h2>
+    <ol>
+      <li>Bật Docker Desktop, sau đó chạy <code>docker compose up --build</code> tại root repo.</li>
+      <li>Mở <code>http://localhost:58081</code>.</li>
+      <li>Chọn target, ví dụ <code>/app/workspace/juice-shop</code>, <code>/app/workspace/python-vuln-app</code> hoặc ứng dụng mẫu được mount trong <code>real-apps/</code>.</li>
+      <li>Nếu muốn DAST live, nhập URL như <code>http://juice-shop:3000</code>; nếu bỏ trống, pipeline ghi nhận chế độ DAST dự đoán và nêu giới hạn.</li>
+      <li>Nhấn scan, xem trạng thái pipeline, policy decision, SBOM, audit log và các report trong <code>security-results/</code>.</li>
+    </ol>
+
+    <h2>3. Mapping yêu cầu nộp bài</h2>
+    <table>
+      <tr><th>Yêu cầu</th><th>Artifact đáp ứng</th><th>Ghi chú</th></tr>
+      <tr><td>Repo public duy nhất</td><td>Toàn bộ source, app mẫu, dashboard, pipeline và report nằm trong repo này.</td><td>Task 1-4 dùng cùng target/pipeline/env.</td></tr>
+      <tr><td><code>docker-compose.yml</code></td><td>Service <code>aegisflow</code> và <code>juice-shop</code>.</td><td>Chạy lại bằng Docker, không phụ thuộc CI thật.</td></tr>
+      <tr><td>PDF 3-5 trang</td><td><code>DevSecOps_CaseStudy_Report.pdf</code>.</td><td>Tài liệu chấm điểm chính.</td></tr>
+      <tr><td>Security outputs</td><td><code>sast_results.json</code>, <code>sca_results.json</code>, <code>iac_results.json</code>, <code>sbom.json</code>, <code>policy_result.json</code>.</td><td>Report có thể được parse tự động.</td></tr>
+    </table>
+
+    <div class="footer"><span>Target mẫu: NodeGoat / Juice Shop / Python vulnerable app</span><span>Generated for submission</span></div>
+  </section>
+
+  <section class="page">
+    <div class="topline"><span>Task 1 - CI/CD Pipeline + SAST</span><span>Trang 2/5</span></div>
+    <h2>Task 1. CI/CD Pipeline + SAST</h2>
+    <p>Pipeline tối thiểu gồm <strong>Build</strong>, <strong>Test</strong>, <strong>Security</strong> và <strong>Report</strong>. Cấu hình CI tham chiếu nằm ở <code>.gitlab-ci.yml</code>; local runner nằm ở <code>pipeline/run_pipeline.sh</code>. Cách này cho phép người chấm chạy bằng Docker nhưng vẫn thấy được tư duy CI/CD thật.</p>
+
+    <h3>Flow thực thi chi tiết</h3>
+    <div class="flow">1. build_target.py      : phát hiện stack, validate build script hoặc chạy build thật khi có cấu hình
+2. test_target.py       : chạy test thật nếu có lệnh portable; nếu không, ghi rõ validation mode
+3. scan_sast.py         : Semgrep scan, xuất SARIF/JSON
+4. scan_sca.py          : Trivy filesystem dependency scan
+5. scan_sbom.py         : sinh SBOM để truy vết supply chain
+6. scan_secret.py       : Gitleaks phát hiện secret hardcoded
+7. scan_iac.py          : Checkov kiểm tra Docker/IaC
+8. scan_dast.py         : Nuclei/DAST live hoặc predictive mode
+9. report_generator.py  : hợp nhất report
+10. ai_triage_engine.py : triage ngữ cảnh, fallback deterministic khi không có GROQ_API_KEY
+11. policy_engine.py    : quyết định pass/warn/block</div>
+
+    <h3>Lý do chọn SAST tool</h3>
+    <table>
+      <tr><th>Công cụ</th><th>Lý do chọn</th><th>Vị trí trong pipeline</th></tr>
+      <tr><td>Semgrep</td><td>Nhẹ, chạy tốt trong container, hỗ trợ nhiều ngôn ngữ, dễ xuất SARIF/JSON và phù hợp repo nhiều sample app.</td><td>Sau Build/Test, trước SCA/IaC/DAST để phát hiện lỗi code sớm.</td></tr>
+    </table>
+
+    <h3>Pass/Fail decision</h3>
+    <table>
+      <tr><th>Loại issue</th><th>Quyết định</th><th>Lý do</th></tr>
+      <tr><td><span class="tag critical">Critical</span> Secret, RCE, auth bypass, SQL injection có khả năng khai thác cao</td><td>Block pipeline</td><td>Rủi ro trực tiếp tới dữ liệu, credential hoặc quyền truy cập.</td></tr>
+      <tr><td><span class="tag high">High</span> từ 2 findings trở lên</td><td>Block pipeline</td><td>Rủi ro tích lũy lớn, cần xử lý trước khi merge/release.</td></tr>
+      <tr><td><span class="tag medium">Medium</span> code smell bảo mật, missing hardening</td><td>Warning + ticket</td><td>Không nên chặn mọi release, nhưng phải có SLA.</td></tr>
+      <tr><td><span class="tag low">Low</span> informational</td><td>Allow + backlog</td><td>Dùng cho cải tiến hygiene.</td></tr>
+    </table>
+
+    <h3>Kết quả mẫu từ report hiện tại</h3>
+    <table>
+      <tr><th>ID</th><th>Tool</th><th>Severity</th><th>Ví dụ finding</th><th>Vị trí</th></tr>
+      <tr><td>FIND-009</td><td>Semgrep</td><td><span class="tag medium">Medium</span></td><td>javascript.browser.security.eval-detected.eval-detected</td><td><code>app/routes/contributions.js:32</code></td></tr>
+      <tr><td>FIND-010</td><td>Semgrep</td><td><span class="tag medium">Medium</span></td><td>code-string-concat</td><td><code>app/routes/contributions.js:32</code></td></tr>
+    </table>
+
+    <h3>Giả lập và giới hạn</h3>
+    <p>Build/Test có thể chạy ở <strong>validation mode</strong> khi target không có dependency hoặc command portable. Đây không phải build production đầy đủ; mục tiêu là chứng minh orchestration, artifact và policy flow. Khi đưa vào CI thật, bật cài dependency theo stack và chạy test suite đầy đủ.</p>
+
+    <div class="footer"><span>Artifacts: .gitlab-ci.yml, pipeline/run_pipeline.sh, security-results/sast_results.json</span><span>Task 1</span></div>
+  </section>
+
+  <section class="page">
+    <div class="topline"><span>Task 2 - SCA + Container / IaC Security</span><span>Trang 3/5</span></div>
+    <h2>Task 2. SCA + Container / IaC Security</h2>
+    <p>Repo đáp ứng nhiều hơn yêu cầu tối thiểu: có SCA, SBOM, secrets scanning, IaC scanning và container-oriented validation. Trivy kiểm tra dependency/filesystem; Checkov kiểm tra Dockerfile, GitHub workflow và cấu hình hạ tầng; Syft sinh SBOM.</p>
+
+    <div class="grid-3">
+      <div class="box"><div class="metric">75</div><strong>SCA</strong><br><span class="muted">Dependency vulnerabilities</span></div>
+      <div class="box"><div class="metric">3</div><strong>IaC</strong><br><span class="muted">Misconfiguration</span></div>
+      <div class="box"><div class="metric">5</div><strong>Secrets</strong><br><span class="muted">Hardcoded credentials</span></div>
+    </div>
+
+    <h3>Phân biệt nhóm rủi ro</h3>
+    <table>
+      <tr><th>Nhóm</th><th>Định nghĩa</th><th>Tool/Artifact</th><th>Fix ở đâu</th></tr>
+      <tr><td>Vulnerability do code</td><td>Lỗi nằm trong source do lập trình sai, ví dụ dùng <code>eval</code>, nối chuỗi vào query, thiếu kiểm tra auth.</td><td>Semgrep/SAST</td><td>Sửa code, thêm test bảo mật.</td></tr>
+      <tr><td>Vulnerability do dependency</td><td>Thư viện/package có CVE hoặc version lỗi thời.</td><td>Trivy/SCA, Syft/SBOM</td><td>Nâng version, thay dependency, pin version an toàn.</td></tr>
+      <tr><td>Misconfiguration</td><td>Cấu hình Docker, workflow, permission hoặc image thiếu hardening.</td><td>Checkov/IaC</td><td>Sửa Dockerfile, compose, CI workflow, service account.</td></tr>
+      <tr><td>Secret exposure</td><td>API key, private key hoặc token bị commit vào repo.</td><td>Gitleaks</td><td>Rotate secret, xóa khỏi git history, dùng secret manager.</td></tr>
+    </table>
+
+    <h3>Issue High/Critical - root cause và remediation</h3>
+    <table>
+      <tr><th>Finding</th><th>Root cause</th><th>Tác động</th><th>Remediation</th></tr>
+      <tr><td><span class="tag critical">Critical</span> Hardcoded API key tại <code>config/env/development.js</code></td><td>Credential được lưu trong source thay vì biến môi trường/secret store.</td><td>Lộ token, truy cập trái phép tới service nội bộ hoặc bên thứ ba.</td><td>Rotate key, xóa khỏi history, dùng <code>.env</code> ignored + CI secret variable, thêm secret scan pre-merge.</td></tr>
+      <tr><td><span class="tag critical">Critical</span> Private key tại <code>artifacts/cert/server.key</code></td><td>Private key test bị đưa vào repo.</td><td>Giả mạo TLS, giải mã traffic hoặc impersonation nếu key được dùng thật.</td><td>Thu hồi cert/key, tạo key mới, không commit private key, mount qua runtime secret.</td></tr>
+      <tr><td><span class="tag medium">Medium</span> Dockerfile thiếu HEALTHCHECK</td><td>Container không có health signal chuẩn.</td><td>Deploy khó phát hiện service treo, ảnh hưởng availability.</td><td>Thêm <code>HEALTHCHECK</code> phù hợp endpoint readiness.</td></tr>
+    </table>
+
+    <h3>Container / IaC logic</h3>
+    <p>Pipeline không chỉ tìm CVE mà còn kiểm tra "đường đi tới production": Dockerfile có healthcheck hay không, workflow có permission quá rộng hay không, secret có bị lộ trước khi build image hay không. Với container image scanning production, bước tiếp theo là thêm <code>trivy image</code> sau khi build image thay vì chỉ <code>trivy fs</code>.</p>
+
+    <h3>Hướng dẫn chạy riêng Task 2</h3>
+    <ol>
+      <li>Chạy toàn bộ stack bằng <code>docker compose up --build</code>.</li>
+      <li>Trong dashboard, chọn target và launch scan.</li>
+      <li>Xem <code>security-results/sca_results.json</code>, <code>security-results/iac_results.json</code>, <code>security-results/sbom.json</code>.</li>
+      <li>Đối chiếu bảng remediation trên dashboard hoặc trong full report.</li>
+    </ol>
+
+    <div class="footer"><span>Artifacts: sca_results.json, iac_results.json, sbom.json, full_report.json</span><span>Task 2</span></div>
+  </section>
+
+  <section class="page">
+    <div class="topline"><span>Task 3-4 - Governance and Pipeline Security</span><span>Trang 4/5</span></div>
+    <h2>Task 3. Policy Enforcement & Security Governance</h2>
+    <p>Scenario đề bài yêu cầu pipeline phát hiện <strong>1 Critical, 2 High, 2 Medium</strong>. Policy của repo còn chặt hơn: chỉ cần có Critical là block; từ 2 High trở lên cũng block. Report mẫu hiện tại có 15 Critical, 39 High, 48 Medium nên trạng thái là <strong>BLOCKED</strong>.</p>
+
+    <h3>Sơ đồ logic policy</h3>
+    <div class="flow">IF critical_count > 0
+  THEN BLOCK, owner must fix or request exception
+ELSE IF high_count >= 2
+  THEN BLOCK
+ELSE IF risk_weight > 50
+  THEN WARNING, release allowed only with ticket
+ELSE
+  PASS</div>
+
+    <table>
+      <tr><th>Điều kiện</th><th>Decision</th><th>Exception</th><th>Approver</th></tr>
+      <tr><td>Critical bất kỳ</td><td>Block</td><td>Chỉ cho phép khi false positive đã chứng minh hoặc compensating control tạm thời.</td><td>AppSec Lead + Engineering Manager, CISO nếu production impact.</td></tr>
+      <tr><td>Từ 2 High trở lên</td><td>Block</td><td>Có expiry date, ticket, owner, rollback plan.</td><td>AppSec Lead + Product Owner.</td></tr>
+      <tr><td>Medium/Low</td><td>Warning/Allow</td><td>Không cần exception formal nếu đã có backlog và SLA.</td><td>Team Lead.</td></tr>
+    </table>
+
+    <h3>Dashboard / reporting</h3>
+    <table>
+      <tr><th>Nhóm người xem</th><th>Họ cần nhìn gì</th><th>Trong dashboard/report</th></tr>
+      <tr><td>CISO/BOD</td><td>Security score, số Critical/High, xu hướng block/pass, SLA breach, rủi ro business.</td><td>Executive summary, policy status, severity chart, audit log.</td></tr>
+      <tr><td>Dev team</td><td>Finding cụ thể, file/line, root cause, remediation, owner, priority.</td><td>Action Center, full_report, triage notes.</td></tr>
+      <tr><td>Product</td><td>Impact tới release, lựa chọn defer/fix, deadline và risk acceptance.</td><td>Policy decision, exception workflow, SLA table.</td></tr>
+    </table>
+
+    <h3>Quy trình xử lý và SLA</h3>
+    <table>
+      <tr><th>Severity</th><th>Owner chính</th><th>SLA đề xuất</th><th>Giao tiếp với Product</th></tr>
+      <tr><td>Critical</td><td>Dev owner + AppSec</td><td>24-48 giờ; không release nếu chưa fix/approve exception.</td><td>Thông báo release risk ngay, đề xuất hotfix hoặc scope reduction.</td></tr>
+      <tr><td>High</td><td>Dev owner</td><td>5 ngày làm việc; block nếu >= 2 hoặc exploitability cao.</td><td>Đưa vào sprint hiện tại, thống nhất trade-off deadline.</td></tr>
+      <tr><td>Medium</td><td>Dev team</td><td>30 ngày hoặc theo sprint kế tiếp.</td><td>Backlog có priority rõ, không che giấu risk.</td></tr>
+    </table>
+
+    <h2>Task 4. Security of the Pipeline</h2>
+    <table>
+      <tr><th>Threat</th><th>Impact</th><th>Mitigation đã/đề xuất cài trong pipeline</th></tr>
+      <tr><td>Secrets leakage</td><td>Token/API key bị lộ qua repo hoặc log.</td><td><code>scan_secret.py</code> dùng Gitleaks, <code>.env</code> không commit, dashboard không yêu cầu nhập secret bắt buộc.</td></tr>
+      <tr><td>Compromised CI runner</td><td>Attacker sửa artifact, đánh cắp biến môi trường, chạy code độc.</td><td>Runner container hóa, least privilege volume, artifact audit log, tách secret khỏi source.</td></tr>
+      <tr><td>Malicious pipeline modification</td><td>Bypass scanner hoặc nới policy gate.</td><td>Review bắt buộc cho <code>.gitlab-ci.yml</code> và <code>pipeline/</code>, audit log decision, CODEOWNERS trong CI thật.</td></tr>
+      <tr><td>Over-permissioned service account</td><td>CI token có quyền ghi/xóa quá rộng.</td><td>Policy Checkov phát hiện workflow permission rộng; dùng read-only token mặc định, cấp quyền theo job.</td></tr>
+      <tr><td>Supply-chain attack</td><td>Tool/action hoặc dependency bị thay thế độc hại.</td><td>Pin version scanner, sinh SBOM, scan dependency bằng Trivy, ưu tiên image/tool nguồn chính thức.</td></tr>
+    </table>
+
+    <div class="footer"><span>Artifacts: policy_result.json, audit_log.json, dashboard/data/*.json</span><span>Task 3-4</span></div>
+  </section>
+
+  <section class="page">
+    <div class="topline"><span>Task 5 - Secure-by-Design & Threat Modeling</span><span>Trang 5/5</span></div>
+    <h2>Task 5. Secure-by-Design & Threat Modeling</h2>
+    <p>Task 5 dùng một hệ thống khác với target scan của Task 1-4: <strong>Web App + API + Database + External Payment Service</strong>. Mục tiêu là chứng minh tư duy thiết kế bảo mật trước khi code.</p>
+
+    <h3>DFD mức cao</h3>
+    <div class="flow">[Customer Browser]
+    | HTTPS + session/JWT
+    v
+[Web App / Frontend]
+    | REST/JSON + access token
+    v
+[Backend API] ---- SQL/TLS ----> [Database]
+    |
+    | signed payment request + idempotency key
+    v
+[External Payment Service]
+    |
+    v
+[Payment Webhook Endpoint] -> verify signature -> update order status</div>
+
+    <h3>Threat mapping</h3>
+    <table>
+      <tr><th>Threat</th><th>Design control</th><th>CI/CD security check</th></tr>
+      <tr><td>API/auth: attacker dùng JWT giả, token hết hạn nhưng vẫn accepted hoặc thiếu authorization theo object.</td><td>OIDC/JWT verification, short-lived token, RBAC/ABAC, object-level authorization, deny-by-default middleware.</td><td>SAST rule cho missing auth middleware, unit/integration test authz, DAST test endpoint unauthenticated.</td></tr>
+      <tr><td>Payment tampering: sửa amount/order_id hoặc replay webhook.</td><td>Server-side price calculation, signed request, webhook signature verification, idempotency key, replay window.</td><td>SAST tìm thiếu signature verification, API test replay/idempotency, secret scan cho payment key.</td></tr>
+      <tr><td>Data disclosure: SQL injection hoặc database exposed/misconfigured.</td><td>Parameterized query/ORM safe mode, least privilege DB user, encryption at rest/in transit, private network.</td><td>SAST injection rules, SCA database driver CVE scan, IaC scan public exposure/security group.</td></tr>
+    </table>
+
+    <h3>Liên kết threat model với pipeline</h3>
+    <p>Threat model không dừng ở sơ đồ. Mỗi control phải có một check trong CI/CD: auth control được kiểm bằng SAST và test; payment control được kiểm bằng test chữ ký/webhook; database control được kiểm bằng SAST, SCA và IaC scan. Nhờ vậy thiết kế bảo mật được chuyển thành policy tự động, tránh tình trạng chỉ có tài liệu nhưng không có enforcement.</p>
+
+    <h2>Checklist nộp bài</h2>
+    <table>
+      <tr><th>Hạng mục</th><th>Trạng thái</th><th>Đường dẫn</th></tr>
+      <tr><td>Docker Compose chạy local</td><td>Done</td><td><code>docker-compose.yml</code></td></tr>
+      <tr><td>Pipeline config</td><td>Done</td><td><code>.gitlab-ci.yml</code>, <code>pipeline/run_pipeline.sh</code></td></tr>
+      <tr><td>SAST/SCA/IaC/Secret/SBOM reports</td><td>Done</td><td><code>security-results/</code></td></tr>
+      <tr><td>Policy enforcement</td><td>Done</td><td><code>pipeline/policy_engine.py</code>, <code>policy_result.json</code></td></tr>
+      <tr><td>Dashboard/reporting</td><td>Done</td><td><code>dashboard/</code>, <code>dashboard/data/</code></td></tr>
+      <tr><td>PDF report 3-5 trang</td><td>Done</td><td><code>DevSecOps_CaseStudy_Report.pdf</code></td></tr>
+    </table>
+
+    <h2>Kết luận</h2>
+    <p>AegisFlow đáp ứng yêu cầu thực hành bằng một hệ thống có thể chạy lại local, có artifact rõ ràng, có governance và có phân tích bảo mật của chính pipeline. Các phần giả lập/fallback được giới hạn ở build/test portability, AI triage khi thiếu API key và DAST predictive mode khi không có URL live; các giới hạn này đã được nêu rõ để người chấm phân biệt demo orchestration với production CI hoàn chỉnh.</p>
+
+    <div class="footer"><span>Recommended submission file: DevSecOps_CaseStudy_Report.pdf</span><span>Task 5 + Final Checklist</span></div>
+  </section>
+</body>
+</html>
