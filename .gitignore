@@ -1,22 +1,35 @@
-.env
-node_modules/
+# System & IDE
+.DS_Store
+.vscode/
+.idea/
 __pycache__/
 *.pyc
-pipeline/.bin/
+.env
 .agents/
+.codex/
 ai_skills/
-dashboard/data/
+workspace/
 tmp/
 
-# Exclude Data, Logs, Tests as requested
-mock-data/
-ingest/
-logs/
-NodeGoat/
-vulnerable-app/
-test-target-app/
-test/
-*results.json
+# Logs & Temporary Files
 *.log
-full_report_triaged.json
-storage/
+nohup.out
+ingest/
+pipeline/.bin/
+
+# Dashboard Data (Dynamic)
+dashboard/data/*.json
+!dashboard/data/full_report.json
+
+# Security Pipeline Outputs
+security-results/*.json
+!security-results/.gitkeep
+
+# Node.js
+node_modules/
+npm-debug.log*
+
+# Mac specific
+.AppleDouble
+.LSOverride
+Icon

@@ -1,105 +1,96 @@
-# AegisFlow
+# 🛡️ AegisFlow: Autonomous Enterprise ASPM & DevSecOps Orchestrator
 
-AegisFlow is a local DevSecOps/AppSec framework built for the case-study submission. It uses one repository, one Docker-based environment, one pipeline, and one dashboard to orchestrate security scanning across a selected target folder.
+[![Security: Semgrep](https://img.shields.io/badge/Security-Semgrep-blueviolet)](https://semgrep.dev/)
+[![Security: Trivy](https://img.shields.io/badge/Security-Trivy-blue)](https://aquasecurity.github.io/trivy/)
+[![Security: Gitleaks](https://img.shields.io/badge/Security-Gitleaks-orange)](https://github.com/gitleaks/gitleaks)
+[![AI-Powered](https://img.shields.io/badge/AI-Triage%20Engine-gradient)](https://groq.com/)
 
-The operator workflow is intentionally simple:
-1. Start the stack with Docker Compose.
-2. Open the dashboard at `http://localhost:58081`.
-3. Choose the application folder to scan.
-4. Click `Scan`.
-5. Review findings, policy decisions, remediation guidance, SBOM data, and audit logs in the dashboard and generated report artifacts.
+**AegisFlow** is a next-generation Application Security Posture Management (ASPM) platform designed to unify SAST, SCA, DAST, Secrets, and IaC scanning into a single, autonomous pipeline. Featuring a modern glassmorphism dashboard and an AI-driven triage engine, it transforms raw security data into actionable executive insights.
 
-## Submission Mapping
+---
 
-This repository is structured to satisfy the mandatory submission package:
+## 🏗️ System Architecture
 
-- `docker-compose.yml`: local runtime for the dashboard, pipeline controller, and demo target app.
-- `DevSecOps_CaseStudy_Report.pdf`: single PDF report used for scoring.
-- Supporting project files: pipeline scripts, dashboard, report generator, sample targets, and reports.
+```mermaid
+graph TD
+    User((Security Analyst)) --> Dashboard[AegisFlow Dashboard]
+    Dashboard --> Server[Python Server]
+    Server --> Pipeline[Pipeline Orchestrator]
+    
+    subgraph "Scanning Engine"
+        Pipeline --> SAST[Semgrep]
+        Pipeline --> SCA[Trivy]
+        Pipeline --> Secret[Gitleaks]
+        Pipeline --> IaC[Checkov]
+        Pipeline --> DAST[Nuclei]
+    end
+    
+    Pipeline --> AI[AI Triage Engine]
+    AI --> Findings[Consolidated Findings]
+    Findings --> Dashboard
+    Findings --> Reports[PDF/JSON Reports]
+```
 
-## Tasks Covered
+---
 
-This repo covers Task 1, Task 2, Task 3, Task 4, and Task 5.
+## ✨ Key Features
 
-- Task 1: CI/CD pipeline with explicit `build`, `test`, `security`, and `report` stages in [.gitlab-ci.yml](/Users/toilaluongg/Desktop/AegisFlow-main/.gitlab-ci.yml:1) and [.github/workflows/ci.yml](/Users/toilaluongg/Desktop/AegisFlow-main/.github/workflows/ci.yml:1).
-- Task 2: SCA, IaC, container-oriented security, secrets scanning, and SBOM generation.
-- Task 3: policy enforcement, dashboard reporting, SLA handling, exception workflow, and auditability.
-- Task 4: pipeline security analysis and mitigations, including secret handling, least privilege, and supply-chain guardrails.
-- Task 5: secure-by-design threat modeling for a separate payment-service system described in the report.
+- **🚀 Autonomous Pipeline**: One-click execution of 5+ industry-standard security scanners.
+- **🧠 AI Triage Hub**: Intelligent vulnerability classification using LLMs (Llama-3.3) to reduce false positives.
+- **💎 Premium Dashboard**: High-fidelity Glassmorphism UI with real-time telemetry and 1:1 navigation-to-panel mapping.
+- **📄 Executive Report Center**: Professional PDF/HTML report generation with security scoring and remediation roadmaps.
+- **🔍 Multi-Layer Analysis**: Integrated support for Source Code, Dependencies, Secrets, Cloud Infrastructure, and Dynamic Runtime.
 
-## Real Tools vs Fallback Logic
+---
 
-- SAST: `semgrep`
-- SCA and image/dependency scan: `trivy`
-- Secrets: `gitleaks`
-- IaC: `checkov`
-- DAST: `nuclei`
-- SBOM: `syft`
-- AI Triage: `Groq (Llama-3.3)` with deep context analysis.
+## 🛠️ Security Toolchain
 
-## Key Features & Enhancements
+AegisFlow integrates the industry's best-in-class open-source security tools:
 
-- **Dynamic Security Score**: Real-time numerical risk assessment (0-100) based on vulnerability density and severity.
-- **Enterprise Report Center**: Automated, professional security assessment preview with executive summary and top risk analysis.
-- **AI-Powered Contextual Triage**: Eliminates false positives by analyzing code context surrounding detected vulnerabilities.
-- **Glassmorphism Dashboard**: A modern, high-contrast "Single Pane of Glass" for CISO-level visibility.
+| Category | Tool | Description |
+| :--- | :--- | :--- |
+| **SAST** | `Semgrep` | Semantic analysis for vulnerability patterns. |
+| **SCA** | `Trivy` | Software Composition Analysis for vulnerable dependencies. |
+| **Secrets** | `Gitleaks` | High-accuracy detection of leaked API keys and credentials. |
+| **IaC** | `Checkov` | Misconfiguration scanning for Docker, K8s, and Terraform. |
+| **DAST** | `Nuclei` | Dynamic template-based scanning for live targets. |
+| **AI** | `Groq/Llama-3` | Context-aware triage and automated remediation guidance. |
 
-For portability, some stages support controlled fallback behavior:
+---
 
-- `build` and `test` stages use lightweight validation when a selected target does not expose a portable build/test command.
-- AI triage uses Groq when `GROQ_API_KEY` is provided; otherwise it falls back to deterministic local reasoning templates.
-- DAST runs against a live URL only when the backend approves the target. By default, demo targets such as `juice-shop` are inferred server-side; extra live targets must be declared through `AEGIS_ALLOWED_DAST_TARGETS`.
-- If no approved live target is available, the framework records predictive DAST mode in the report instead of probing an arbitrary URL.
+## 🚀 Quick Start
 
-These fallbacks are deliberate and are explained in the PDF report along with their limits.
+### 1. Prerequisites
+- Docker & Docker Compose
+- (Optional) [Groq API Key](https://console.groq.com/) for AI-powered triage.
 
-## Quick Start
-
-1. Optionally copy `.env.example` to `.env`.
-2. Optionally add `GROQ_API_KEY` for live AI triage.
-3. Optionally add `AEGIS_ALLOWED_DAST_TARGETS` as a comma-separated allowlist of extra live DAST URLs if you need more than the built-in demo targets.
-4. Start the stack:
-
+### 2. Launch the Platform
 ```bash
+# Clone the repository
+git clone https://github.com/luonglt20/AegisFlow.git
+cd AegisFlow
+
+# Start the environment
 docker-compose up --build
 ```
 
-Example:
+### 3. Access the Dashboard
+Navigate to `http://localhost:58081` to launch your first security scan.
 
-```bash
-AEGIS_ALLOWED_DAST_TARGETS=https://demo.example.com,http://staging.internal:8080 docker-compose up --build
-```
+---
 
-5. Open `http://localhost:58081`.
+## 📂 Repository Structure
 
-## Useful Commands
+- `dashboard/`: Premium Frontend & Backend server logic.
+- `pipeline/`: Core security bridge scripts and orchestrator.
+- `docs/`: Comprehensive technical documentation and user guides.
+- `demo-targets/`: Consolidated directory containing vulnerable-app and real-world targets for validation.
+- `tests/`: End-to-end security test suites.
 
-```bash
-make up
-make pipeline
-make down
-```
+---
 
-## GitHub Actions
+## 🛡️ License & Safety
 
-This repository also includes a GitHub Actions workflow in [.github/workflows/ci.yml](/Users/toilaluongg/Desktop/AegisFlow-main/.github/workflows/ci.yml:1).
+This project is built for professional security demonstration purposes. Ensure all DAST targets are explicitly authorized before scanning. 
 
-- One sequential job runs `build`, `test`, `security`, and `report`
-- Artifacts are always uploaded even when the security policy records blocked findings
-- The default target is `real-apps/NodeGoat`, matching the sample case-study report
-The workflow runs on `push`, `pull_request`, and `workflow_dispatch`.
-
-## Important Artifacts
-
-- Dashboard: [/dashboard](/Users/toilaluongg/Desktop/AegisFlow-main/dashboard)
-- Pipeline scripts: [/pipeline](/Users/toilaluongg/Desktop/AegisFlow-main/pipeline)
-- Security output: [/security-results](/Users/toilaluongg/Desktop/AegisFlow-main/security-results)
-- PDF report: [DevSecOps_CaseStudy_Report.pdf](/Users/toilaluongg/Desktop/AegisFlow-main/DevSecOps_CaseStudy_Report.pdf)
-
-## Public Repo Safety
-
-Before publishing, this repo is designed to avoid committing live secrets:
-
-- `docker-compose.yml` reads runtime values from `.env`.
-- `.env` is ignored by git.
-- `.env.example` documents required variables.
+&copy; 2026 AegisFlow Enterprise. All rights reserved.
