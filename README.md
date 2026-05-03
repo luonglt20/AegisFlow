@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hero-banner.png" alt="AegisFlow Hero" width="70%" style="border-radius: 12px;">
+  <img src="assets/hero-banner.png" alt="AegisFlow Hero" width="40%" style="border-radius: 12px;">
 </p>
 
 <h1 align="center">🛡️ AegisFlow</h1>
