@@ -19,76 +19,54 @@
          ========================================= -->
     <aside id="sidebar">
       <div class="sidebar-header">
-        <div class="brand-logo">
-          <i class="ph-bold ph-shield-check"></i> AegisFlow
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-weight: 800; font-size: 20px; color: var(--brand-primary); letter-spacing: -0.5px; display: flex; align-items: center; gap: 8px;">
+            <i class="ph-bold ph-shield-checkered"></i> AegisFlow
+          </span>
+          <span style="font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: -2px;">Enterprise Security</span>
         </div>
-        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px; font-weight: 500;">
-          Enterprise Security Hub
+        <div class="live-indicator">
+          <div class="live-dot"></div>
+          LIVE
         </div>
       </div>
 
       <nav class="sidebar-nav">
-        <div class="nav-group-title">Main</div>
+        <div class="nav-group-title">Scanning</div>
         <div class="nav-item active" id="nav-executive" onclick="switchTab('executive')">
-          <i class="ph ph-squares-four" style="font-size: 20px;"></i>
-          <span>Executive View</span>
+          <i class="ph-bold ph-squares-four"></i>
+          <span>Executive Overview</span>
         </div>
         <div class="nav-item" id="nav-action" onclick="switchTab('action')">
-          <i class="ph ph-warning-circle" style="font-size: 20px;"></i>
-          <span>Action Center</span>
+          <i class="ph-bold ph-warning-circle"></i>
+          <span>Findings & Actions</span>
         </div>
         <div class="nav-item" id="nav-scanner" onclick="switchTab('scanner')">
-          <i class="ph ph-scan-eye" style="font-size: 20px;"></i>
-          <span>Scanner Intelligence</span>
+          <i class="ph-bold ph-scan"></i>
+          <span>Scanner Control</span>
         </div>
         <div class="nav-item" id="nav-pipeline" onclick="switchTab('pipeline')">
-          <i class="ph ph-git-merge" style="font-size: 20px;"></i>
+          <i class="ph-bold ph-git-merge"></i>
           <span>Pipeline Status</span>
         </div>
+
+        <div class="nav-group-title" style="margin-top: 24px;">Analysis</div>
         <div class="nav-item" id="nav-ai" onclick="switchTab('ai')">
-          <i class="ph ph-cpu" style="font-size: 20px;"></i>
-          <span>AI Analysis Hub</span>
-        </div>
-        <div class="nav-item" id="nav-dev" onclick="switchTab('dev')">
-          <i class="ph ph-code" style="font-size: 20px;"></i>
-          <span>Dev Portal</span>
+          <i class="ph-bold ph-cpu"></i>
+          <span>AI Triage Engine</span>
         </div>
         <div class="nav-item" id="nav-sbom" onclick="switchTab('sbom')">
-          <i class="ph ph-package" style="font-size: 20px;"></i>
+          <i class="ph-bold ph-package"></i>
           <span>Supply Chain (SBOM)</span>
         </div>
-        <li class="nav-item" id="nav-engineering" onclick="switchTab('engineering')">
-          <i class="ph ph-shield-check"></i>
-          <span>Engineering Hub</span>
-        </li>
-        <li class="nav-item" onclick="switchTab('maturity')">
-          <i class="ph ph-chart-line-up"></i>
-          <span>Maturity Map</span>
-        </li>
-        <li class="nav-item" onclick="switchTab('universe')">
-          <i class="ph ph-planet"></i>
-          <span>AppSec Universe</span>
-        </li>
-        <div class="nav-item" id="nav-compliance" onclick="switchTab('compliance')">
-          <i class="ph ph-certificate" style="font-size: 20px;"></i>
-          <span>Compliance Center</span>
-        </div>
 
-        <div class="nav-group-title" style="margin-top: 24px;">Security & Ops</div>
-        <div class="nav-item" id="nav-override" onclick="switchTab('override')">
-          <i class="ph ph-shield-warning" style="font-size: 20px;"></i>
-          <span>Override Center</span>
-        </div>
-        <div id="nav-threat" class="nav-item" onclick="switchTab('threat')">
-          <i class="ph ph-tree-structure" style="font-size: 20px;"></i>
-          <span>Threat Modeling</span>
-        </div>
+        <div class="nav-group-title" style="margin-top: 24px;">Reports & Audit</div>
         <div class="nav-item" id="nav-reports" onclick="switchTab('reports')">
-          <i class="ph ph-file-text" style="font-size: 20px;"></i>
+          <i class="ph-bold ph-file-text"></i>
           <span>Report Center</span>
         </div>
         <div class="nav-item" id="nav-audit" onclick="switchTab('audit')">
-          <i class="ph ph-list-dashes" style="font-size: 20px;"></i>
+          <i class="ph-bold ph-list-dashes"></i>
           <span>Audit Log</span>
         </div>
       </nav>
@@ -126,7 +104,6 @@
       <!-- View Container (Scrollable) -->
       <div class="view-container">
 
-        <!-- 1. Executive View -->
         <div id="tab-executive" class="tab-panel active">
           <div style="display: flex; justify-content: space-between; align-items:flex-end; margin-bottom: 24px;">
             <div>
@@ -152,13 +129,25 @@
             </div>
           </div>
 
+          <style>
+            @keyframes border-pulse-orange {
+              0% { border-color: rgba(255, 167, 38, 0.2); box-shadow: 0 0 0 0 rgba(255, 167, 38, 0.1); }
+              50% { border-color: rgba(255, 167, 38, 0.8); box-shadow: 0 0 15px 0 rgba(255, 167, 38, 0.3); }
+              100% { border-color: rgba(255, 167, 38, 0.2); box-shadow: 0 0 0 0 rgba(255, 167, 38, 0.1); }
+            }
+            @keyframes border-pulse-red {
+              0% { border-color: rgba(255, 77, 77, 0.2); box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.1); }
+              50% { border-color: rgba(255, 77, 77, 0.8); box-shadow: 0 0 15px 0 rgba(255, 77, 77, 0.3); }
+              100% { border-color: rgba(255, 77, 77, 0.2); box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.1); }
+            }
+          </style>
           <div class="grid-4" style="margin-bottom: 24px;">
-            <div class="card card-alert-orange" style="text-align: center;">
+            <div class="card card-alert-orange" style="text-align: center; animation: border-pulse-orange 3s infinite;">
               <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Security Score</div>
               <div id="score-value" class="stat-value" style="color: var(--sev-critical);">--<span style="font-size: 16px; color: var(--text-muted);">/100</span></div>
               <div id="grade-badge" class="badge badge-critical">CALCULATING...</div>
             </div>
-            <div class="card card-alert-red" style="text-align: center;">
+            <div class="card card-alert-red" style="text-align: center; animation: border-pulse-red 3s infinite 1s;">
               <div style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Critical Findings</div>
               <div id="kpi-critical" class="stat-value" style="color: var(--sev-critical);">--</div>
               <div id="kpi-critical-label" style="font-size: 12px; color: var(--sev-critical); font-weight: 500;">Waiting for scan</div>
@@ -191,7 +180,6 @@
           </div>
         </div>
 
-        <!-- 2. Action Center -->
         <div id="tab-action" class="tab-panel">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
             <div>
@@ -211,7 +199,6 @@
           </div>
         </div>
 
-        <!-- 2b. Scanner Control -->
         <div id="tab-scanner" class="tab-panel">
           <div class="panel-header">
             <h2 class="panel-title" style="font-size: 24px; margin-bottom: 4px;">Scan Control</h2>
@@ -223,11 +210,11 @@
             <div class="card" style="padding: 16px;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                 <div style="color: #00BCD4; font-weight: 700; font-size: 11px; text-transform: uppercase;">1. Code Scanning</div>
-                <div class="badge badge-success" style="font-size: 8px; padding: 2px 4px;">ACTIVE</div>
+                <div class="badge badge-success badge-active-animated" style="font-size: 8px; padding: 2px 4px;">ACTIVE</div>
               </div>
               <ul style="list-style: none; padding: 0; margin: 0; font-size: 11px; color: var(--text-main); line-height: 1.6;">
-                <li><i class="ph ph-check-circle" style="color: #4DFF88; margin-right: 4px;"></i> SAST (Taint)</li>
-                <li><i class="ph ph-check-circle" style="color: #4DFF88; margin-right: 4px;"></i> Secret Entropy</li>
+                <li><i class="ph ph-check-circle icon-animated" style="color: #4DFF88; margin-right: 4px; background: rgba(77,255,136,0.1);"></i> SAST (Taint)</li>
+                <li><i class="ph ph-check-circle icon-animated" style="color: #4DFF88; margin-right: 4px; background: rgba(77,255,136,0.1);"></i> Secret Entropy</li>
                 <li style="color: var(--text-muted);"><i class="ph ph-circle" style="margin-right: 4px;"></i> Pre-commit Hooks</li>
               </ul>
             </div>
@@ -236,11 +223,11 @@
             <div class="card" style="padding: 16px;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                 <div style="color: var(--brand-primary); font-weight: 700; font-size: 11px; text-transform: uppercase;">2. Dependency</div>
-                <div class="badge badge-success" style="font-size: 8px; padding: 2px 4px;">ACTIVE</div>
+                <div class="badge badge-success badge-active-animated" style="font-size: 8px; padding: 2px 4px;">ACTIVE</div>
               </div>
               <ul style="list-style: none; padding: 0; margin: 0; font-size: 11px; color: var(--text-main); line-height: 1.6;">
-                <li><i class="ph ph-check-circle" style="color: #4DFF88; margin-right: 4px;"></i> SCA (CVE Match)</li>
-                <li><i class="ph ph-check-circle" style="color: #4DFF88; margin-right: 4px;"></i> License Audit</li>
+                <li><i class="ph ph-check-circle icon-animated" style="color: #4DFF88; margin-right: 4px; background: rgba(77,255,136,0.1);"></i> SCA (CVE Match)</li>
+                <li><i class="ph ph-check-circle icon-animated" style="color: #4DFF88; margin-right: 4px; background: rgba(77,255,136,0.1);"></i> License Audit</li>
                 <li style="color: var(--text-muted);"><i class="ph ph-circle" style="margin-right: 4px;"></i> Reachability</li>
               </ul>
             </div>
@@ -249,11 +236,11 @@
             <div class="card" style="padding: 16px;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                 <div style="color: #4DFF88; font-weight: 700; font-size: 11px; text-transform: uppercase;">4. Infra / IaC</div>
-                <div class="badge badge-success" style="font-size: 8px; padding: 2px 4px;">ACTIVE</div>
+                <div class="badge badge-success badge-active-animated" style="font-size: 8px; padding: 2px 4px;">ACTIVE</div>
               </div>
               <ul style="list-style: none; padding: 0; margin: 0; font-size: 11px; color: var(--text-main); line-height: 1.6;">
-                <li><i class="ph ph-check-circle" style="color: #4DFF88; margin-right: 4px;"></i> Terraform Policy</li>
-                <li><i class="ph ph-check-circle" style="color: #4DFF88; margin-right: 4px;"></i> Cloud Misconfig</li>
+                <li><i class="ph ph-check-circle icon-animated" style="color: #4DFF88; margin-right: 4px; background: rgba(77,255,136,0.1);"></i> Terraform Policy</li>
+                <li><i class="ph ph-check-circle icon-animated" style="color: #4DFF88; margin-right: 4px; background: rgba(77,255,136,0.1);"></i> Cloud Misconfig</li>
               </ul>
             </div>
 
@@ -261,33 +248,93 @@
             <div class="card" style="padding: 16px;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
                 <div style="color: #00BCD4; font-weight: 700; font-size: 11px; text-transform: uppercase;">7. API Scan</div>
-                <div class="badge badge-success" style="font-size: 8px; padding: 2px 4px;">ACTIVE</div>
+                <div class="badge badge-success badge-active-animated" style="font-size: 8px; padding: 2px 4px;">ACTIVE</div>
               </div>
               <ul style="list-style: none; padding: 0; margin: 0; font-size: 11px; color: var(--text-main); line-height: 1.6;">
-                <li><i class="ph ph-check-circle" style="color: #4DFF88; margin-right: 4px;"></i> OpenAPI Fuzz</li>
-                <li><i class="ph ph-check-circle" style="color: #4DFF88; margin-right: 4px;"></i> Auth Bypass</li>
+                <li><i class="ph ph-check-circle icon-animated" style="color: #4DFF88; margin-right: 4px; background: rgba(77,255,136,0.1);"></i> OpenAPI Fuzz</li>
+                <li><i class="ph ph-check-circle icon-animated" style="color: #4DFF88; margin-right: 4px; background: rgba(77,255,136,0.1);"></i> Auth Bypass</li>
               </ul>
             </div>
           </div>
 
-          <!-- Taint Analysis Viz -->
-          <div class="card" style="margin-top: 24px; border: 1px solid var(--brand-primary); background: rgba(255, 107, 0, 0.02);">
+          <!-- Taint Analysis Viz (Animated) -->
+          <style>
+            @keyframes flow-right {
+              0% { transform: translateX(-5px); opacity: 0; }
+              50% { opacity: 1; transform: translateX(5px); }
+              100% { transform: translateX(15px); opacity: 0; }
+            }
+            @keyframes pulse-source {
+              0% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.4); }
+              70% { box-shadow: 0 0 0 10px rgba(255, 107, 0, 0); }
+              100% { box-shadow: 0 0 0 0 rgba(255, 107, 0, 0); }
+            }
+            @keyframes pulse-sink {
+              0% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.4); }
+              70% { box-shadow: 0 0 0 10px rgba(255, 77, 77, 0); }
+              100% { box-shadow: 0 0 0 0 rgba(255, 77, 77, 0); }
+            }
+            @keyframes flow-border {
+              0% { border-color: rgba(255,255,255,0.1); }
+              50% { border-color: rgba(255,255,255,0.5); }
+              100% { border-color: rgba(255,255,255,0.1); }
+            }
+            @keyframes scan-line {
+              0% { left: -100%; }
+              100% { left: 100%; }
+            }
+            @keyframes pulse-badge {
+              0% { box-shadow: 0 0 0 0 rgba(77, 255, 136, 0.4); transform: scale(1); }
+              50% { box-shadow: 0 0 0 6px rgba(77, 255, 136, 0); transform: scale(1.05); }
+              100% { box-shadow: 0 0 0 0 rgba(77, 255, 136, 0); transform: scale(1); }
+            }
+            @keyframes spin-slow {
+              100% { transform: rotate(360deg); }
+            }
+            .badge-active-animated {
+              animation: pulse-badge 2s infinite;
+            }
+            .icon-animated {
+              animation: pulse-badge 2s infinite;
+              border-radius: 50%;
+            }
+          </style>
+          <div class="card" style="margin-top: 24px; border: 1px solid var(--brand-primary); background: rgba(255, 107, 0, 0.02); position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; width: 50%; height: 2px; background: linear-gradient(90deg, transparent, var(--brand-primary), transparent); animation: scan-line 3s infinite linear;"></div>
             <h3 style="font-size: 15px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
               <i class="ph ph-flow-arrow" style="color: var(--brand-primary); font-size: 20px;"></i>
-              Technical Core: Advanced Taint Analysis Visualization
+              Technical Core: Real-time Taint Analysis Flow
             </h3>
-            <div style="display: flex; gap: 30px; align-items: center; padding: 15px;">
-              <div style="flex: 1; text-align: center; background: rgba(255,107,0,0.05); padding: 15px; border-radius: 10px; border: 1px dashed var(--brand-primary);">
+            <div style="display: flex; gap: 30px; align-items: center; padding: 15px; position: relative;">
+              
+              <!-- Source -->
+              <div style="flex: 1; text-align: center; background: rgba(255,107,0,0.05); padding: 15px; border-radius: 10px; border: 1px dashed var(--brand-primary); animation: pulse-source 2s infinite;">
                 <strong style="color: var(--brand-primary); font-size: 12px;">SOURCE</strong><br>
                 <span style="font-size: 10px; color: var(--text-muted);">External Input</span>
               </div>
-              <i class="ph ph-caret-double-right" style="color: var(--text-muted);"></i>
-              <div style="flex: 1; text-align: center; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 10px; border: 1px solid var(--border-light);">
+              
+              <!-- Arrow 1 -->
+              <div style="display: flex; gap: -5px; color: var(--brand-primary); position: relative; width: 30px; height: 16px;">
+                <i class="ph-bold ph-caret-right" style="position: absolute; left: 0; animation: flow-right 1.5s infinite; opacity: 0;"></i>
+                <i class="ph-bold ph-caret-right" style="position: absolute; left: 8px; animation: flow-right 1.5s infinite 0.3s; opacity: 0;"></i>
+                <i class="ph-bold ph-caret-right" style="position: absolute; left: 16px; animation: flow-right 1.5s infinite 0.6s; opacity: 0;"></i>
+              </div>
+
+              <!-- Propagation -->
+              <div style="flex: 1; text-align: center; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 10px; border: 1px solid var(--border-light); animation: flow-border 2s infinite 0.5s;">
                 <strong style="font-size: 12px;">PROPAGATION</strong><br>
                 <span style="font-size: 10px; color: var(--text-muted);">Sanitization Gap</span>
               </div>
-              <i class="ph ph-caret-double-right" style="color: var(--text-muted);"></i>
-              <div style="flex: 1; text-align: center; background: rgba(255, 77, 77, 0.05); padding: 15px; border-radius: 10px; border: 1px dashed #ff4d4d;">
+
+              <!-- Arrow 2 -->
+              <div style="display: flex; gap: -5px; color: #ff4d4d; position: relative; width: 30px; height: 16px;">
+                <i class="ph-bold ph-caret-right" style="position: absolute; left: 0; animation: flow-right 1.5s infinite 0.5s; opacity: 0;"></i>
+                <i class="ph-bold ph-caret-right" style="position: absolute; left: 8px; animation: flow-right 1.5s infinite 0.8s; opacity: 0;"></i>
+                <i class="ph-bold ph-caret-right" style="position: absolute; left: 16px; animation: flow-right 1.5s infinite 1.1s; opacity: 0;"></i>
+              </div>
+
+              <!-- Sink -->
+              <div style="flex: 1; text-align: center; background: rgba(255, 77, 77, 0.05); padding: 15px; border-radius: 10px; border: 1px dashed #ff4d4d; animation: pulse-sink 2s infinite 1s;">
                 <strong style="color: #ff4d4d; font-size: 12px;">SINK</strong><br>
                 <span style="font-size: 10px; color: var(--text-muted);">Sensitive Op</span>
               </div>
@@ -309,6 +356,20 @@
                    <i class="ph ph-key" style="color: var(--brand-primary);"></i>
                    <input type="password" id="api-key-input" class="input-control" placeholder="Enter Groq API Key..." style="font-size: 11px; height: 32px;" value="">
                  </div>
+               </div>
+
+               <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; margin-top: 10px;">
+                    <label style="display: block; font-size: 11px; font-weight: 700; color: var(--brand-primary); letter-spacing: 1px; margin-bottom: 12px; text-transform: uppercase;">
+                        <i class="ph-bold ph-list-checks"></i> Scanners to Execute
+                    </label>
+                    <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 10px;">
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-main); cursor: pointer; font-weight: 500;"><input type="checkbox" id="scanner-sast" checked style="accent-color: var(--brand-primary); cursor: pointer;"> SAST</label>
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-main); cursor: pointer; font-weight: 500;"><input type="checkbox" id="scanner-sca" checked style="accent-color: var(--brand-primary); cursor: pointer;"> SCA</label>
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-main); cursor: pointer; font-weight: 500;"><input type="checkbox" id="scanner-sbom" checked style="accent-color: var(--brand-primary); cursor: pointer;"> SBOM</label>
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-main); cursor: pointer; font-weight: 500;"><input type="checkbox" id="scanner-secret" checked style="accent-color: var(--brand-primary); cursor: pointer;"> Secrets</label>
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-main); cursor: pointer; font-weight: 500;"><input type="checkbox" id="scanner-iac" checked style="accent-color: var(--brand-primary); cursor: pointer;"> IaC</label>
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-main); cursor: pointer; font-weight: 500;"><input type="checkbox" id="scanner-dast" checked style="accent-color: var(--brand-primary); cursor: pointer;"> DAST</label>
+                    </div>
                </div>
 
                 <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; margin-top: 10px;">
@@ -381,7 +442,6 @@
           </div>
         </div>
 
-        <!-- 3. Pipeline -->
         <div id="tab-pipeline" class="tab-panel">
            <div style="margin-bottom: 24px;">
               <h2 style="font-size: 24px; margin-bottom: 4px;">Pipeline Integration</h2>
@@ -396,7 +456,6 @@
            </div>
         </div>
 
-        <!-- 4. AI Hub -->
         <div id="tab-ai" class="tab-panel">
           <div style="margin-bottom: 24px;">
               <h2 style="font-size: 24px; margin-bottom: 4px;">AI Triage Hub</h2>
@@ -417,619 +476,29 @@
           </div>
         </div>
 
-        <!-- 5. Dev Portal -->
-        <div id="tab-dev" class="tab-panel">
-          <div style="margin-bottom: 24px;">
-              <h2 style="font-size: 24px; margin-bottom: 4px;">Developer Portal</h2>
-              <p style="color: var(--text-muted); font-size: 14px;">Findings explicitly assigned to you for remediation.</p>
-          </div>
-          <div id="dev-portal-content" class="finding-list">
-              <!-- Rendered via JS -->
-          </div>
-        </div>
-
-        <!-- 5b. AppSec Universe Hub -->
-        <div id="tab-universe" class="tab-panel">
-          <div class="panel-header">
-            <h2 class="panel-title" style="font-size: 24px; margin-bottom: 4px;">AppSec Universe: The 4 Pillars</h2>
-            <p class="panel-subtitle" style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">An integrated approach to Secure Design, Implementation, Verification, and Governance.</p>
-          </div>
-
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px;">
-            <!-- Pillar 1: Governance -->
-            <div class="card" style="border-top: 3px solid #00BCD4;">
-              <h3 style="font-size: 14px; color: #00BCD4; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                <i class="ph ph-briefcase"></i> GOVERNANCE
-              </h3>
-              <div style="font-size: 11px; color: var(--text-muted); line-height: 1.6;">
-                <p>• Policy & Standards (ASVS L2)</p>
-                <p>• Risk Classification (Tier 1-4)</p>
-                <p>• Metrics (MTTD/MTTR, Escape Rate)</p>
-                <p>• Training & Awareness</p>
-              </div>
-            </div>
-
-            <!-- Pillar 2: Secure Design -->
-            <div class="card" style="border-top: 3px solid var(--brand-primary);">
-              <h3 style="font-size: 14px; color: var(--brand-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                <i class="ph ph-pencil-line"></i> SECURE DESIGN
-              </h3>
-              <div style="font-size: 11px; color: var(--text-muted); line-height: 1.6;">
-                <p>• Threat Modeling (STRIDE)</p>
-                <p>• Security Requirements</p>
-                <p>• Secure Design Patterns</p>
-                <p>• Defense in Depth Strategy</p>
-              </div>
-            </div>
-
-            <!-- Pillar 3: Implementation -->
-            <div class="card" style="border-top: 3px solid #9966FF;">
-              <h3 style="font-size: 14px; color: #9966FF; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                <i class="ph ph-code"></i> IMPLEMENTATION
-              </h3>
-              <div style="font-size: 11px; color: var(--text-muted); line-height: 1.6;">
-                <p>• Secure Coding (Input/Output)</p>
-                <p>• Secret Management</p>
-                <p>• Proactive Controls (C1-C10)</p>
-                <p>• Crypto Standards (AES-256)</p>
-              </div>
-            </div>
-
-            <!-- Pillar 4: Testing -->
-            <div class="card" style="border-top: 3px solid #4DFF88;">
-              <h3 style="font-size: 14px; color: #4DFF88; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                <i class="ph ph-microscope"></i> VERIFICATION
-              </h3>
-              <div style="font-size: 11px; color: var(--text-muted); line-height: 1.6;">
-                <p>• Testing Pyramid (SAST/DAST)</p>
-                <p>• OWASP WSTG Checklist</p>
-                <p>• Pentest & Red Teaming</p>
-                <p>• ASPM Vulnerability Lifecycle</p>
-              </div>
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
-            <!-- Knowledge Deep Dive -->
-            <div class="card">
-              <h3 style="font-size: 16px; margin-bottom: 20px;">Secure Coding Core Principles</h3>
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-                <div style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);">
-                  <div style="color: #00BCD4; font-weight: 700; font-size: 11px; margin-bottom: 4px;">INPUT VALIDATION</div>
-                  <p style="font-size: 11px; color: var(--text-muted);">Whitelist > Blacklist. Validate server-side early and often.</p>
-                </div>
-                <div style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);">
-                  <div style="color: var(--brand-primary); font-weight: 700; font-size: 11px; margin-bottom: 4px;">OUTPUT ENCODING</div>
-                  <p style="font-size: 11px; color: var(--text-muted);">Context-aware (HTML, JS, SQL, URL) to prevent XSS/Injection.</p>
-                </div>
-                <div style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);">
-                  <div style="color: #9966FF; font-weight: 700; font-size: 11px; margin-bottom: 4px;">AUTHENTICATION</div>
-                  <p style="font-size: 11px; color: var(--text-muted);">Hash: Argon2/bcrypt. MFA preferred for all Internet-facing apps.</p>
-                </div>
-                <div style="background: rgba(0,0,0,0.1); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);">
-                  <div style="color: #4DFF88; font-weight: 700; font-size: 11px; margin-bottom: 4px;">CRYPTOGRAPHY</div>
-                  <p style="font-size: 11px; color: var(--text-muted);">Symmetric: AES-256-GCM. TLS 1.3 for transit security.</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- 100% Enterprise DevSecOps Matrix -->
-            <div class="card" style="grid-column: span 2; margin-top: 12px; border: 1px solid var(--border-light); background: rgba(0,0,0,0.1);">
-              <h3 style="font-size: 15px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                <i class="ph ph-shield-check" style="color: #4DFF88;"></i>
-                100% Enterprise DevSecOps Coverage Matrix
-              </h3>
-
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 16px;">
-                <!-- 4 Testing Groups -->
-                <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);">
-                  <div style="font-weight: 700; color: #00BCD4; font-size: 11px; margin-bottom: 8px;">4 TESTING METHODOLOGIES</div>
-                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 10px; color: var(--text-muted);">
-                    <div><span style="color: #4DFF88;">●</span> Automated (SAST, DAST, SCA)</div>
-                    <div><span style="color: #4DFF88;">●</span> Manual (Pentest, Threat Model)</div>
-                    <div><span style="color: #FFDB4D;">●</span> Team-based (Red/Blue/Purple)</div>
-                    <div><span style="color: #4DFF88;">●</span> Audit (Compliance, Logs)</div>
-                  </div>
-                </div>
-                <!-- 4 Attack Surfaces -->
-                <div style="background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);">
-                  <div style="font-weight: 700; color: #9966FF; font-size: 11px; margin-bottom: 8px;">4 ATTACK SURFACES</div>
-                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 10px; color: var(--text-muted);">
-                    <div><span style="color: #4DFF88;">●</span> Input (Injection, XSS)</div>
-                    <div><span style="color: #4DFF88;">●</span> Identity (AuthN/Z, IDOR)</div>
-                    <div><span style="color: #4DFF88;">●</span> Data (Crypto, Secrets)</div>
-                    <div><span style="color: #FFDB4D;">●</span> Architecture (SSRF, Logic)</div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 8 Scan Categories -->
-              <div style="font-weight: 700; color: #FFDB4D; font-size: 11px; margin-bottom: 8px;">8 CORE SCANNER CATEGORIES (INGESTION STATUS)</div>
-              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
-                <div style="font-size: 10px;">
-                  <div style="font-weight: 700; color: #4DFF88; margin-bottom: 4px;"><span id="sast-status"><i class="ph ph-circle"></i></span> 1. CODE (SAST/SECRET)</div>
-                  <div class="badge" style="background: rgba(77, 255, 136, 0.1); color: #4DFF88; font-size: 8px;">ACTIVE (Semgrep/Gitleaks)</div>
-                </div>
-                <div style="font-size: 10px;">
-                  <div style="font-weight: 700; color: #4DFF88; margin-bottom: 4px;"><span id="sca-status"><i class="ph ph-circle"></i></span> 2. DEPENDENCY (SCA)</div>
-                  <div class="badge" style="background: rgba(77, 255, 136, 0.1); color: #4DFF88; font-size: 8px;">ACTIVE (Trivy)</div>
-                </div>
-                <div style="font-size: 10px;">
-                  <div style="font-weight: 700; color: #4DFF88; margin-bottom: 4px;">3. CONTAINER (IMAGE/K8S)</div>
-                  <div class="badge" style="background: rgba(77, 255, 136, 0.1); color: #4DFF88; font-size: 8px;">ACTIVE (Trivy Image)</div>
-                </div>
-                <div style="font-size: 10px;">
-                  <div style="font-weight: 700; color: #4DFF88; margin-bottom: 4px;"><span id="iac-status"><i class="ph ph-circle"></i></span> 4. INFRA (IaC/CSPM)</div>
-                  <div class="badge" style="background: rgba(77, 255, 136, 0.1); color: #4DFF88; font-size: 8px;">ACTIVE (Checkov)</div>
-                </div>
-                <div style="font-size: 10px;">
-                  <div style="font-weight: 700; color: #4DFF88; margin-bottom: 4px;">5. NETWORK (VULN/PORT)</div>
-                  <div class="badge" style="background: rgba(77, 255, 136, 0.1); color: #4DFF88; font-size: 8px;">ACTIVE (Nmap/Nessus)</div>
-                </div>
-                <div style="font-size: 10px;">
-                  <div style="font-weight: 700; color: #4DFF88; margin-bottom: 4px;"><span id="dast-status"><i class="ph ph-circle"></i></span> 6. RUNTIME (DAST/IAST)</div>
-                  <div class="badge" style="background: rgba(77, 255, 136, 0.1); color: #4DFF88; font-size: 8px;">ACTIVE (Nuclei/ZAP)</div>
-                </div>
-                <div style="font-size: 10px;">
-                  <div style="font-weight: 700; color: #4DFF88; margin-bottom: 4px;"><span id="api-status"><i class="ph ph-circle"></i></span> 7. API (FUZZING)</div>
-                  <div class="badge" style="background: rgba(77, 255, 136, 0.1); color: #4DFF88; font-size: 8px;">ACTIVE (Restler/KICS)</div>
-                </div>
-                <div style="font-size: 10px;">
-                  <div style="font-weight: 700; color: #4DFF88; margin-bottom: 4px;">8. COMPLIANCE (AUDIT)</div>
-                  <div class="badge" style="background: rgba(77, 255, 136, 0.1); color: #4DFF88; font-size: 8px;">ACTIVE (Aegis Policy)</div>
-                </div>
-              </div>
-              <p style="font-size: 9px; color: var(--text-muted); margin-top: 16px; border-top: 1px solid var(--border-light); padding-top: 8px;">
-                <i class="ph ph-info"></i> Note: System now ingests and aggregates telemetry across all 8 scanner categories and 4 testing methodologies, achieving 100% ASPM coverage.
-              </p>
-            </div>
-            <!-- People & ASPM Section -->
-          <div style="margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-            <!-- Security Champions -->
-            <div class="card" style="background: rgba(153, 102, 255, 0.02); border-left: 4px solid #9966FF;">
-              <h3 style="font-size: 16px; margin-bottom: 16px; color: #9966FF;">Security Champions Program</h3>
-              <div style="display: flex; gap: 16px;">
-                <div style="flex: 1;">
-                  <p style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">Embedding security experts within development teams to bridge the gap between Sec and Dev.</p>
-                  <ul style="font-size: 10px; color: var(--brand-primary); margin-top: 8px; list-style: none; padding: 0;">
-                    <li><i class="ph ph-check"></i> Participation in Threat Modeling</li>
-                    <li><i class="ph ph-check"></i> PR Review for Security Sensitivity</li>
-                    <li><i class="ph ph-check"></i> Initial Triage of Scan Findings</li>
-                  </ul>
-                </div>
-                <div style="width: 80px; height: 80px; background: rgba(153, 102, 255, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #9966FF;">
-                  <i class="ph ph-users-three" style="font-size: 40px;"></i>
-                </div>
-              </div>
-            </div>
-
-            <!-- ASPM Engine -->
-            <div class="card" style="background: rgba(77, 255, 136, 0.02); border-left: 4px solid #4DFF88;">
-              <h3 style="font-size: 16px; margin-bottom: 16px; color: #4DFF88;">ASPM Unified Layer</h3>
-              <div style="font-size: 11px; color: var(--text-muted); line-height: 1.5;">
-                <p>Consolidating SAST, DAST, SCA, and IaC into a single prioritized view.</p>
-                <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px;">
-                  <div style="text-align: center;">
-                    <div style="font-weight: 700; font-size: 14px;">1,800</div>
-                    <div style="font-size: 8px;">RAW ALERTS</div>
-                  </div>
-                  <i class="ph ph-arrow-right"></i>
-                  <div style="text-align: center; color: #4DFF88;">
-                    <div style="font-weight: 700; font-size: 14px;">50</div>
-                    <div style="font-size: 8px;">ACTIONABLE</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        </div>
         <div id="tab-sbom" class="tab-panel">
-          <div style="margin-bottom: 24px;">
-              <h2 style="font-size: 24px; margin-bottom: 4px;">Software Bill of Materials (SBOM)</h2>
-              <p style="color: var(--text-muted); font-size: 14px;">Dependencies and software components inventory.</p>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <div>
+              <h2 style="font-size: 24px; margin-bottom: 4px;">Supply Chain (SBOM)</h2>
+              <p style="color: var(--text-muted); font-size: 14px;">Software Bill of Materials — full dependency and component inventory in CycloneDX format.</p>
+            </div>
           </div>
           <div class="card">
              <div class="code-container">
                <div class="code-container-header">
-                 <span>cyclonedx.json</span>
+                 <div class="code-window-controls">
+                   <div class="code-window-dot dot-red"></div>
+                   <div class="code-window-dot dot-yellow"></div>
+                   <div class="code-window-dot dot-green"></div>
+                 </div>
+                 <div class="code-window-title">cyclonedx.json</div>
+                 <div></div>
                </div>
                <pre class="code-block" id="sbom-data">Loading SBOM data...</pre>
              </div>
           </div>
         </div>
 
-        <!-- 6a. Security Engineering Hub -->
-        <div id="tab-engineering" class="tab-panel">
-          <div class="panel-header">
-            <h2 class="panel-title" style="font-size: 24px; margin-bottom: 4px;">Security Engineering & Audit Hub</h2>
-            <p class="panel-subtitle" style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Advanced Testing & Auditing Framework: Automated, Manual, Team-based, and Compliance.</p>
-          </div>
-
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;">
-            <!-- Group 1: Automated -->
-            <div class="card">
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                <div style="width: 32px; height: 32px; background: rgba(0, 188, 212, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #00BCD4;">
-                  <i class="ph ph-cpu" style="font-size: 20px;"></i>
-                </div>
-                <h3 style="font-size: 16px; margin: 0;">Automated Testing (Continuous)</h3>
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="padding: 12px; border-radius: 8px; background: var(--bg-surface-hover); border-left: 3px solid #00BCD4;">
-                  <strong>SAST → DAST → IAST → RASP</strong>
-                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Full-stack coverage from code to runtime protection.</p>
-                </div>
-                <div style="padding: 12px; border-radius: 8px; background: var(--bg-surface-hover); border-left: 3px solid #00BCD4;">
-                  <strong>Fuzzing (AFL, LibFuzzer)</strong>
-                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Exposure of unexpected paths via malformed data injection.</p>
-                </div>
-                <div style="padding: 12px; border-radius: 8px; background: var(--bg-surface-hover); border-left: 3px solid #00BCD4;">
-                  <strong>Continuous SCA & SBOM</strong>
-                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Real-time dependency integrity and license compliance.</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Group 2: Manual -->
-            <div class="card">
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                <div style="width: 32px; height: 32px; background: rgba(255, 107, 0, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--brand-primary);">
-                  <i class="ph ph-detective" style="font-size: 20px;"></i>
-                </div>
-                <h3 style="font-size: 16px; margin: 0;">Manual & Expert Review</h3>
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="padding: 12px; border-radius: 8px; background: var(--bg-surface-hover); border-left: 3px solid var(--brand-primary);">
-                  <strong>Security Code Review (PR-based)</strong>
-                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Context-aware analysis of auth, crypto, and logic.</p>
-                </div>
-                <div style="padding: 12px; border-radius: 8px; background: var(--bg-surface-hover); border-left: 3px solid var(--brand-primary);">
-                  <strong>Pentest (Black/Grey/White Box)</strong>
-                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Manual exploitation of findings via PTES phases.</p>
-                </div>
-                <div style="padding: 12px; border-radius: 8px; background: var(--bg-surface-hover); border-left: 3px solid var(--brand-primary);">
-                  <strong>OWASP WSTG Checklist</strong>
-                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">12 categories of comprehensive web security testing.</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Group 3: Team-based -->
-            <div class="card">
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                <div style="width: 32px; height: 32px; background: rgba(153, 102, 255, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #9966FF;">
-                  <i class="ph ph-users-three" style="font-size: 20px;"></i>
-                </div>
-                <h3 style="font-size: 16px; margin: 0;">Team-based Security</h3>
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="padding: 12px; border-radius: 8px; background: var(--bg-surface-hover); border-left: 3px solid #9966FF;">
-                  <strong>Red / Blue / Purple Team</strong>
-                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Collaboration via MITRE ATT&CK and continuous TTP sharing.</p>
-                </div>
-                <div style="padding: 12px; border-radius: 8px; background: var(--bg-surface-hover); border-left: 3px solid #9966FF;">
-                  <strong>Chaos Security Engineering</strong>
-                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Failure injection (Network, Resource, Auth) to test resilience.</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- Group 4: Audit -->
-            <div class="card">
-              <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
-                <div style="width: 32px; height: 32px; background: rgba(77, 255, 136, 0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #4DFF88;">
-                  <i class="ph ph-clipboard-text" style="font-size: 20px;"></i>
-                </div>
-                <h3 style="font-size: 16px; margin: 0;">Compliance & Audit</h3>
-              </div>
-              <div style="display: flex; flex-direction: column; gap: 12px;">
-                <div style="padding: 12px; border-radius: 8px; background: var(--bg-surface-hover); border-left: 3px solid #4DFF88;">
-                  <strong>Automated Evidence Collection</strong>
-                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Collecting SAST/SCA/WAF logs for auditors automatically.</p>
-                </div>
-                <div style="padding: 12px; border-radius: 8px; background: var(--bg-surface-hover); border-left: 3px solid #4DFF88;">
-                  <strong>Audit vs Pentest Strategy</strong>
-                  <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Aligning policy existence with real exploitation testing.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- KPI Matrix -->
-          <div class="card" style="margin-top: 24px;">
-            <h3 style="font-size: 16px; margin-bottom: 16px;">DevSecOps Testing KPI Matrix</h3>
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
-              <div style="text-align: center;">
-                <div style="font-size: 24px; font-weight: 700; color: #00BCD4;" id="kpi-mttd">--</div>
-                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">MTTD (Detect)</div>
-              </div>
-              <div style="text-align: center;">
-                <div style="font-size: 24px; font-weight: 700; color: var(--brand-primary);" id="kpi-mttr">--</div>
-                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">MTTR (Remediate)</div>
-              </div>
-              <div style="text-align: center;">
-                <div style="font-size: 24px; font-weight: 700; color: #9966FF;" id="kpi-ver">--</div>
-                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Escape Rate</div>
-              </div>
-              <div style="text-align: center;">
-                <div style="font-size: 24px; font-weight: 700; color: #4DFF88;" id="kpi-gate">--</div>
-                <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Gate Pass %</div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Maturity Map Panel -->
-        <div id="tab-maturity" class="tab-panel">
-          <div class="panel-header">
-            <h2 class="panel-title" style="font-size: 24px; margin-bottom: 4px;">DevSecOps Maturity Map (2025 Operating Model)</h2>
-            <p class="panel-subtitle" style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Multi-layered security alignment: NIST, OWASP, SLSA, and ISO.</p>
-          </div>
-
-          <div style="display: flex; flex-direction: column; gap: 24px;">
-            <!-- Layer 5: Governance -->
-            <div style="border: 1px solid var(--border-light); padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.02);">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--brand-primary); margin: 0;">Layer 5: Governance & Compliance</h3>
-                <div id="mat-gov" class="badge badge-brand" style="background: rgba(255, 107, 0, 0.1); color: var(--brand-primary); border: 1px solid var(--brand-primary);">Target: ISO 27034 Compliance</div>
-              </div>
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-                <div style="background: var(--bg-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);"><strong>ISO/IEC 27034</strong><br><span style="font-size: 11px; color: var(--text-muted);">AppSec Management</span></div>
-                <div style="background: var(--bg-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);"><strong>CIS Controls v8</strong><br><span style="font-size: 11px; color: var(--text-muted);">Secure Development</span></div>
-                <div style="background: var(--bg-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);"><strong>SOC2 CC7.1</strong><br><span style="font-size: 11px; color: var(--text-muted);">Vulnerability Mgmt</span></div>
-              </div>
-            </div>
-
-            <!-- Layer 4: Foundation -->
-            <div style="border: 1px solid var(--border-light); padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.02);">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--brand-primary); margin: 0;">Layer 4: Security Foundation</h3>
-                <div id="mat-found" class="badge badge-brand" style="background: rgba(255, 107, 0, 0.1); color: var(--brand-primary); border: 1px solid var(--brand-primary);">Ref: NIST SSDF v1.1</div>
-              </div>
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
-                <div style="background: var(--bg-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);"><strong>NIST SSDF</strong><br><span style="font-size: 11px; color: var(--text-muted);">Prepare & Protect</span></div>
-                <div style="background: var(--bg-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);"><strong>NIST CSF 2.0</strong><br><span style="font-size: 11px; color: var(--text-muted);">Identify & Detect</span></div>
-                <div style="background: var(--bg-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);"><strong>NIST 800-204D</strong><br><span style="font-size: 11px; color: var(--text-muted);">Supply Chain Strategy</span></div>
-              </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-              <!-- Layer 3: AppSec -->
-              <div style="border: 1px solid var(--border-light); padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.02);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                  <h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--brand-primary); margin: 0;">Layer 3: App Security</h3>
-                  <div id="mat-appsec" class="badge" style="font-size: 10px;">OWASP ASVS</div>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                  <div style="background: var(--bg-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);"><strong>OWASP Top 10 2025</strong><br><span style="font-size: 11px; color: var(--text-muted);">Web & API Defense</span></div>
-                  <div style="background: var(--bg-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);"><strong>OWASP ASVS L2</strong><br><span style="font-size: 11px; color: var(--text-muted);">Standard Verification</span></div>
-                </div>
-              </div>
-
-              <!-- Layer 2: Supply Chain -->
-              <div style="border: 1px solid var(--border-light); padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.02);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                  <h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--brand-primary); margin: 0;">Layer 2: Supply Chain</h3>
-                  <div id="mat-supply" class="badge" style="font-size: 10px;">SLSA v1.1</div>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                  <div style="background: var(--bg-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);"><strong>SLSA v1.1 L3</strong><br><span style="font-size: 11px; color: var(--text-muted);">Build Provenance</span></div>
-                  <div style="background: var(--bg-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);"><strong>SBOM (CycloneDX)</strong><br><span style="font-size: 11px; color: var(--text-muted);">Inventory Control</span></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Layer 1: Pipeline -->
-            <div style="border: 1px solid var(--border-light); padding: 20px; border-radius: 12px; background: rgba(255,255,255,0.02);">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--brand-primary); margin: 0;">Layer 1: Pipeline Integrity</h3>
-                <div id="mat-pipeline" class="badge" style="font-size: 10px;">CI/CD Gates</div>
-              </div>
-              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-                <div style="background: var(--bg-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);"><strong>OWASP CI/CD Top 10</strong><br><span style="font-size: 11px; color: var(--text-muted);">Pipeline Hardening</span></div>
-                <div style="background: var(--bg-surface-hover); padding: 12px; border-radius: 8px; border: 1px solid var(--border-light);"><strong>CISA KEV</strong><br><span style="font-size: 11px; color: var(--text-muted);">BOD 22-01 Focus</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div id="tab-compliance" class="tab-panel">
-          <div style="margin-bottom: 24px;">
-              <h2 style="font-size: 24px; margin-bottom: 4px;">Compliance Center</h2>
-              <p style="color: var(--text-muted); font-size: 14px;">Regulatory mapping and security posture across frameworks.</p>
-          </div>
-
-          <div class="grid-2" style="margin-bottom: 24px;">
-            <div class="card">
-              <h3 style="font-size: 16px; margin-bottom: 16px;">Regulatory Coverage</h3>
-              <div id="compliance-bars">
-                <!-- Rendered via JS -->
-              </div>
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-            <div class="card" style="height: 350px;">
-              <h3 class="card-title">Security Posture (Compliance Coverage)</h3>
-              <div style="height: 280px;"><canvas id="complianceChart"></canvas></div>
-            </div>
-            <div class="card" style="height: 350px;">
-              <h3 class="card-title">Threat Landscape (STRIDE)</h3>
-              <div style="height: 280px;"><canvas id="strideChart"></canvas></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3 style="font-size: 16px; margin-bottom: 16px;">Requirement Mapping Details</h3>
-            <div id="compliance-details-list">
-              <!-- Rendered via JS -->
-            </div>
-          </div>
-        </div>
-
-        <!-- 7. Override -->
-        <div id="tab-override" class="tab-panel">
-          <div style="margin-bottom: 24px;">
-              <h2 style="font-size: 24px; margin-bottom: 4px;">Override Center</h2>
-              <p style="color: var(--text-muted); font-size: 14px;">Submit business justifications to temporarily unblock pipelines.</p>
-          </div>
-
-          <div class="grid-2">
-            <div>
-              <h3 style="font-size: 16px; margin-bottom: 16px;">Blocking Findings</h3>
-              <div id="blocking-findings">
-                <!-- Enterprise Filter Bar -->
-      <div class="filter-bar" style="margin-bottom: 24px; background: var(--bg-card); padding: 16px; border-radius: 12px; border: 1px solid var(--border-light); display: flex; gap: 15px; align-items: center; box-shadow: var(--shadow-sm);">
-        <div style="font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Filters</div>
-
-        <select id="filter-severity" class="form-control" onchange="applyFilters()" style="width: 140px;">
-          <option value="all">All Severities</option>
-          <option value="critical">Critical Only</option>
-          <option value="high">High & Up</option>
-          <option value="medium">Medium & Up</option>
-        </select>
-
-        <select id="filter-type" class="form-control" onchange="applyFilters()" style="width: 140px;">
-          <option value="all">All Scan Types</option>
-          <option value="SAST">SAST (Static)</option>
-          <option value="SCA">SCA (Deps)</option>
-          <option value="DAST">DAST (Dynamic)</option>
-          <option value="SECRET">Secrets</option>
-          <option value="IAC">Infrastructure</option>
-        </select>
-
-        <select id="filter-status" class="form-control" onchange="applyFilters()" style="width: 140px;">
-          <option value="all">All Statuses</option>
-          <option value="AI_TRIAGED">AI Triaged</option>
-          <option value="PENDING_HUMAN_VERIFY">Pending Review</option>
-          <option value="VERIFIED">Verified</option>
-        </select>
-
-        <div style="flex-grow: 1;"></div>
-
-        <div id="filter-count" style="font-size: 13px; color: var(--brand-primary); font-weight: 600;">Showing 89 findings</div>
-      </div>
-              </div>
-            </div>
-            <div>
-              <div class="card" id="exception-form-container">
-                <h3 style="font-size: 16px; margin-bottom: 16px;">Request Exception</h3>
-                <div class="input-group">
-                  <label class="input-label">Business Justification</label>
-                  <textarea id="exc-justification" class="input-control" rows="4" placeholder="Detail why this must be deployed with known vulnerabilities..."></textarea>
-                </div>
-                <div class="input-group">
-                  <label class="input-label">Target Fix Date</label>
-                  <input type="date" id="exc-date" class="input-control" />
-                </div>
-                <div class="grid-2">
-                  <div class="input-group">
-                    <label class="input-label">Security Lead (Approver)</label>
-                    <input type="text" id="exc-approver" class="input-control" placeholder="e.g. John Doe" />
-                  </div>
-                  <div class="input-group">
-                    <label class="input-label">Product Manager</label>
-                    <input type="text" id="exc-pm" class="input-control" placeholder="e.g. Jane Smith" />
-                  </div>
-                </div>
-                <label style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 24px; cursor: pointer;">
-                  <input type="checkbox" id="exc-accept" style="margin-top: 4px;">
-                  <span style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">I acknowledge accepting the risk associated with deploying critical findings to production, pending PM and SecLead approval.</span>
-                </label>
-                <button class="btn btn-primary" style="width: 100%;" onclick="submitException()">Submit Exception Request</button>
-              </div>
-
-              <div class="card" id="exception-success" style="display: none; border-color: var(--sev-low); background: #f0fdf4;">
-                 <h3 style="color: var(--sev-low); font-size: 18px; margin-bottom: 8px;" id="exc-ref">Exception Logged</h3>
-                 <div id="exc-conditions" style="font-size: 14px; color: var(--text-main); margin-bottom: 24px;"></div>
-                 <button class="btn btn-outline" onclick="resetException()">Submit Another</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 9. Threat Modeling (Task 5) -->
-        <div id="tab-threat" class="tab-panel">
-          <div style="margin-bottom: 24px;">
-            <h2 style="font-size: 24px; margin-bottom: 4px;">Architectural Threat Modeling</h2>
-            <p style="color: var(--text-muted); font-size: 14px;">Data Flow Analysis & Secure-by-Design Mapping (STRIDE Framework).</p>
-          </div>
-
-          <div class="card" style="margin-bottom: 24px; padding: 40px; text-align: center; background: rgba(0,0,0,0.2);">
-            <h3 style="margin-bottom: 30px; font-size: 18px; color: var(--brand-primary);">System Data Flow Diagram (DFD)</h3>
-
-            <div style="display: flex; justify-content: center; align-items: center; gap: 40px; position: relative;">
-                <!-- External User -->
-                <div style="border: 2px solid #fff; border-radius: 50%; width: 80px; height: 80px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                    <i class="ph ph-user" style="font-size: 32px;"></i>
-                    <span style="font-size: 10px; margin-top: 4px;">User</span>
-                </div>
-                <i class="ph ph-arrow-right" style="font-size: 24px; color: #666;"></i>
-
-                <!-- Web App (Trust Boundary) -->
-                <div style="border: 2px solid var(--brand-primary); padding: 15px; border-radius: 8px; width: 120px; background: rgba(0, 188, 212, 0.1);">
-                    <i class="ph ph-browser" style="font-size: 32px; color: var(--brand-primary);"></i>
-                    <div style="font-size: 12px; font-weight: bold; margin-top: 8px;">Web Frontend</div>
-                </div>
-                <i class="ph ph-arrow-right" style="font-size: 24px; color: #666;"></i>
-
-                <!-- API Gateway -->
-                <div style="border: 2px solid #FFDB4D; padding: 15px; border-radius: 8px; width: 120px; background: rgba(255, 219, 77, 0.1);">
-                    <i class="ph ph-api" style="font-size: 32px; color: #FFDB4D;"></i>
-                    <div style="font-size: 12px; font-weight: bold; margin-top: 8px;">API Gateway</div>
-                </div>
-                <i class="ph ph-arrow-right" style="font-size: 24px; color: #666;"></i>
-
-                <!-- Database -->
-                <div style="border: 2px dashed #4DFF88; padding: 15px; border-radius: 8px; width: 120px; background: rgba(77, 255, 136, 0.1);">
-                    <i class="ph ph-database" style="font-size: 32px; color: #4DFF88;"></i>
-                    <div style="font-size: 12px; font-weight: bold; margin-top: 8px;">User DB</div>
-                </div>
-
-                <!-- External Payment -->
-                <div style="position: absolute; top: 120px; right: 160px; border: 2px solid #ef4444; padding: 15px; border-radius: 8px; width: 120px; background: rgba(239, 68, 68, 0.1);">
-                    <i class="ph ph-credit-card" style="font-size: 32px; color: #ef4444;"></i>
-                    <div style="font-size: 12px; font-weight: bold; margin-top: 8px;">Payment Service</div>
-                </div>
-                <div style="position: absolute; top: 80px; right: 220px; width: 2px; height: 60px; background: #666; transform: rotate(45deg);"></div>
-            </div>
-            <p style="margin-top: 60px; font-size: 12px; color: var(--text-muted);">Red dashed lines indicate <strong>Trust Boundaries</strong> where validation must occur.</p>
-          </div>
-
-          <div class="card">
-            <h3 style="margin-bottom: 20px;">Threat Analysis Matrix (Task 5)</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-              <thead>
-                <tr style="border-bottom: 2px solid var(--border-light); text-align: left;">
-                  <th style="padding: 12px;">Threat Category (STRIDE)</th>
-                  <th style="padding: 12px;">Primary Risk</th>
-                  <th style="padding: 12px;">Design Control (Mitigation)</th>
-                  <th style="padding: 12px;">CI/CD Security Check</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style="border-bottom: 1px solid var(--border-light);">
-                  <td style="padding: 12px; color: #ef4444; font-weight: bold;">Spoofing / Auth</td>
-                  <td style="padding: 12px;">Bypassing API authentication</td>
-                  <td style="padding: 12px;">OAuth2 + JWT Validation</td>
-                  <td style="padding: 12px;"><span id="threat-dast-badge" class="badge" style="background: rgba(0,188,212,0.1); color: var(--brand-primary);">DAST (Nuclei)</span></td>
-                </tr>
-                <tr style="border-bottom: 1px solid var(--border-light);">
-                  <td style="padding: 12px; color: #f59e0b; font-weight: bold;">Tampering</td>
-                  <td style="padding: 12px;">SQL Injection in User DB</td>
-                  <td style="padding: 12px;">Parameterized Queries</td>
-                  <td style="padding: 12px;"><span id="threat-sast-badge" class="badge" style="background: rgba(0,188,212,0.1); color: var(--brand-primary);">SAST (Semgrep)</span></td>
-                </tr>
-                <tr style="border-bottom: 1px solid var(--border-light);">
-                  <td style="padding: 12px; color: #10b981; font-weight: bold;">Information Disclosure</td>
-                  <td style="padding: 12px;">Leaking API Keys in logs</td>
-                  <td style="padding: 12px;">Secret Masking / Vault</td>
-                  <td style="padding: 12px;"><span id="threat-secret-badge" class="badge" style="background: rgba(0,188,212,0.1); color: var(--brand-primary);">Secret Scan (Gitleaks)</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
         <div id="tab-reports" class="tab-panel">
           <div style="margin-bottom: 24px;">
             <h2 style="font-size: 24px; margin-bottom: 4px;">Report Center</h2>
@@ -1043,7 +512,7 @@
                 A high-level report containing CISO metrics, compliance status, and top critical findings.
               </p>
               <div style="display: flex; gap: 12px;">
-                <button class="btn btn-primary" onclick="window.print()"><i class="ph ph-printer"></i> Print / Save as PDF</button>
+                <button class="btn btn-primary" onclick="printReport()"><i class="ph ph-printer"></i> Print / Save as PDF</button>
                 <button class="btn btn-outline" onclick="exportJSON()"><i class="ph ph-code"></i> Export JSON</button>
               </div>
             </div>
@@ -1066,60 +535,11 @@
           </div>
         </div>
 
-        <!-- 8. Audit -->
-        <!-- 10. Security Governance (Task 3 & 4) -->
-        <div id="tab-governance" class="tab-panel">
-          <div style="margin-bottom: 24px;">
-            <h2 style="font-size: 24px; margin-bottom: 4px;">Security Governance & Policy</h2>
-            <p style="color: var(--text-muted); font-size: 14px;">Policy Enforcement (Task 3) & Pipeline Hardening (Task 4).</p>
-          </div>
-
-          <div class="grid-2">
-            <!-- Task 3: Policy Enforcement -->
-            <div class="card" style="border-left: 4px solid #f59e0b;">
-              <h3 style="margin-bottom: 16px;"><i class="ph ph-scales"></i> Policy Enforcement Rules</h3>
-              <ul style="font-size: 13px; list-style: none; padding: 0;">
-                <li style="padding: 10px 0; border-bottom: 1px solid var(--border-light);">
-                  <span class="badge" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">BLOCK</span> If <strong>CRITICAL</strong> findings > 0 (SLA: 24h)
-                </li>
-                <li style="padding: 10px 0; border-bottom: 1px solid var(--border-light);">
-                  <span class="badge" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">BLOCK</span> If <strong>HIGH</strong> findings > 2 (SLA: 5 days)
-                </li>
-                <li style="padding: 10px 0;">
-                  <span class="badge" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">WARN</span> For Medium/Low findings
-                </li>
-              </ul>
-              <p style="font-size: 11px; color: var(--text-muted); margin-top: 12px;">* Exceptions require AppSec Manager approval (Role: Security-Admin).</p>
-            </div>
-
-            <!-- Task 4: Security OF the Pipeline -->
-            <div class="card" style="border-left: 4px solid var(--brand-primary);">
-              <h3 style="margin-bottom: 16px;"><i class="ph ph-shield-checkered"></i> Pipeline Security Audit (Task 4)</h3>
-              <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                <tr style="border-bottom: 1px solid var(--border-light);">
-                  <th style="text-align: left; padding: 8px 0;">Threat Group</th>
-                  <th style="text-align: left; padding: 8px 0;">Mitigation Implemented</th>
-                </tr>
-                <tr style="border-bottom: 1px solid var(--border-light);">
-                  <td style="padding: 8px 0;"><strong>Secrets Leakage</strong></td>
-                  <td style="padding: 8px 0; color: #10b981;"><i class="ph ph-check-circle"></i> Gitleaks + Secret Masking</td>
-                </tr>
-                <tr style="border-bottom: 1px solid var(--border-light);">
-                  <td style="padding: 8px 0;"><strong>Compromised Runner</strong></td>
-                  <td style="padding: 8px 0; color: #10b981;"><i class="ph ph-check-circle"></i> Isolated Docker Containers</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0;"><strong>Supply Chain Attack</strong></td>
-                  <td style="padding: 8px 0; color: #10b981;"><i class="ph ph-check-circle"></i> Trivy SCA + Hash Verif.</td>
-                </tr>
-              </table>
-            </div>
-          </div>
-        </div>
+        <div id="tab-audit" class="tab-panel">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
             <div>
               <h2 style="font-size: 24px; margin-bottom: 4px;">Audit Log</h2>
-              <p style="color: var(--text-muted); font-size: 14px;">Immutable evidence trail for compliance.</p>
+              <p style="color: var(--text-muted); font-size: 14px;">Immutable evidence trail for compliance and incident response.</p>
             </div>
             <button class="btn btn-outline" onclick="exportAuditCSV()"><i class="ph ph-download-simple"></i> Export CSV</button>
           </div>

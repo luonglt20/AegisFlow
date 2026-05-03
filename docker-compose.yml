@@ -15,14 +15,6 @@ services:
     networks:
       - aegis-net
 
-  juice-shop:
-    image: bkimminich/juice-shop
-    container_name: juice-shop
-    ports:
-      - "3000:3000"
-    networks:
-      - aegis-net
-
 networks:
   aegis-net:
     driver: bridge

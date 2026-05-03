@@ -98,31 +98,61 @@ run_step() {
 # ─── Pipeline Steps ──────────────────────────────────────────
 
 # Initial state
-"${PYTHON}" pipeline/update_status.py build running test pending sast pending sca pending iac pending dast pending secret pending sbom pending policy pending report pending
+"${PYTHON}" pipeline/update_status.py build running test pending
 
 run_step "1" "Build Validation Stage"              "pipeline/build_target.py"
 "${PYTHON}" pipeline/update_status.py build "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" test running
 
 run_step "2" "Test Validation Stage"               "pipeline/test_target.py"
-"${PYTHON}" pipeline/update_status.py test "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" sast running
+"${PYTHON}" pipeline/update_status.py test "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)"
 
-run_step "3" "SAST Scanning  (Semgrep Bridge)"     "pipeline/scan_sast.py"
-"${PYTHON}" pipeline/update_status.py sast "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" sca running
+if [[ ",${ENABLED_SCANNERS}," == *",sast,"* ]] || [[ -z "${ENABLED_SCANNERS}" ]]; then
+    "${PYTHON}" pipeline/update_status.py sast running
+    run_step "3" "SAST Scanning  (Semgrep Bridge)"     "pipeline/scan_sast.py"
+    "${PYTHON}" pipeline/update_status.py sast "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)"
+else
+    echo -e "${YELLOW}  [!] Skipping SAST Scanning (Deselected)${RESET}"
+fi
 
-run_step "4" "SCA Scanning   (Trivy Bridge)"       "pipeline/scan_sca.py"
-"${PYTHON}" pipeline/update_status.py sca "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" sbom running
+if [[ ",${ENABLED_SCANNERS}," == *",sca,"* ]] || [[ -z "${ENABLED_SCANNERS}" ]]; then
+    "${PYTHON}" pipeline/update_status.py sca running
+    run_step "4" "SCA Scanning   (Trivy Bridge)"       "pipeline/scan_sca.py"
+    "${PYTHON}" pipeline/update_status.py sca "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)"
+else
+    echo -e "${YELLOW}  [!] Skipping SCA Scanning (Deselected)${RESET}"
+fi
 
-run_step "5" "SBOM Generation (CycloneDX Bridge)"  "pipeline/scan_sbom.py"
-"${PYTHON}" pipeline/update_status.py sbom "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" secret running
+if [[ ",${ENABLED_SCANNERS}," == *",sbom,"* ]] || [[ -z "${ENABLED_SCANNERS}" ]]; then
+    "${PYTHON}" pipeline/update_status.py sbom running
+    run_step "5" "SBOM Generation (CycloneDX Bridge)"  "pipeline/scan_sbom.py"
+    "${PYTHON}" pipeline/update_status.py sbom "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)"
+else
+    echo -e "${YELLOW}  [!] Skipping SBOM Generation (Deselected)${RESET}"
+fi
 
-run_step "6" "Secret Scanning (Gitleaks Bridge)"   "pipeline/scan_secret.py"
-"${PYTHON}" pipeline/update_status.py secret "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" iac running
+if [[ ",${ENABLED_SCANNERS}," == *",secret,"* ]] || [[ -z "${ENABLED_SCANNERS}" ]]; then
+    "${PYTHON}" pipeline/update_status.py secret running
+    run_step "6" "Secret Scanning (Gitleaks Bridge)"   "pipeline/scan_secret.py"
+    "${PYTHON}" pipeline/update_status.py secret "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)"
+else
+    echo -e "${YELLOW}  [!] Skipping Secret Scanning (Deselected)${RESET}"
+fi
 
-run_step "7" "IaC Scanning    (Checkov Bridge)"    "pipeline/scan_iac.py"
-"${PYTHON}" pipeline/update_status.py iac "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" dast running
+if [[ ",${ENABLED_SCANNERS}," == *",iac,"* ]] || [[ -z "${ENABLED_SCANNERS}" ]]; then
+    "${PYTHON}" pipeline/update_status.py iac running
+    run_step "7" "IaC Scanning    (Checkov Bridge)"    "pipeline/scan_iac.py"
+    "${PYTHON}" pipeline/update_status.py iac "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)"
+else
+    echo -e "${YELLOW}  [!] Skipping IaC Scanning (Deselected)${RESET}"
+fi
 
-run_step "8" "DAST Scanning   (Nuclei Bridge)"     "pipeline/scan_dast.py"
-"${PYTHON}" pipeline/update_status.py dast "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)"
+if [[ ",${ENABLED_SCANNERS}," == *",dast,"* ]] || [[ -z "${ENABLED_SCANNERS}" ]]; then
+    "${PYTHON}" pipeline/update_status.py dast running
+    run_step "8" "DAST Scanning   (Nuclei Bridge)"     "pipeline/scan_dast.py"
+    "${PYTHON}" pipeline/update_status.py dast "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)"
+else
+    echo -e "${YELLOW}  [!] Skipping DAST Scanning (Deselected)${RESET}"
+fi
 
 echo -e "${DIM}  [*] Copying scan results to ingestion directory...${RESET}"
 mkdir -p "$ROOT_DIR/ingest"
@@ -142,10 +172,7 @@ POLICY_EXIT=0
 "${PYTHON}" pipeline/update_status.py policy "$([[ ${POLICY_EXIT} -eq 0 ]] && echo completed || echo failed)" audit running
 
 run_step "12" "Audit Logging & Traceability"        "pipeline/audit_logger.py"
-"${PYTHON}" pipeline/update_status.py audit "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)" report running
-
-run_step "13" "Generating HTML/PDF Case Study"      "pipeline/generate_report.py"
-"${PYTHON}" pipeline/update_status.py report "$([[ ${RUN_STEP_EXIT} -eq 0 ]] && echo completed || echo failed)"
+"${PYTHON}" pipeline/update_status.py audit completed report completed
 
 # [CRITICAL] Sync findings to Dashboard data folder
 DASHBOARD_DATA="$ROOT_DIR/dashboard/data"
