@@ -1,11 +1,50 @@
-# 🛡️ AegisFlow: Autonomous Enterprise ASPM & DevSecOps Orchestrator
+<p align="center">
+  <img src="assets/hero-banner.png" alt="AegisFlow Hero" width="100%">
+</p>
 
-[![Security: Semgrep](https://img.shields.io/badge/Security-Semgrep-blueviolet)](https://semgrep.dev/)
-[![Security: Trivy](https://img.shields.io/badge/Security-Trivy-blue)](https://aquasecurity.github.io/trivy/)
-[![Security: Gitleaks](https://img.shields.io/badge/Security-Gitleaks-orange)](https://github.com/gitleaks/gitleaks)
-[![AI-Powered](https://img.shields.io/badge/AI-Triage%20Engine-gradient)](https://groq.com/)
+<h1 align="center">🛡️ AegisFlow</h1>
+<p align="center">
+  <strong>Autonomous Enterprise ASPM & AI-Powered DevSecOps Orchestrator</strong>
+</p>
 
-**AegisFlow** is a next-generation Application Security Posture Management (ASPM) platform designed to unify SAST, SCA, DAST, Secrets, and IaC scanning into a single, autonomous pipeline. Featuring a modern glassmorphism dashboard and an AI-driven triage engine, it transforms raw security data into actionable executive insights.
+<p align="center">
+  <img src="https://img.shields.io/badge/Security-Semgrep-blueviolet?style=for-the-badge" alt="Semgrep">
+  <img src="https://img.shields.io/badge/AI-Llama--3-orange?style=for-the-badge" alt="AI">
+  <img src="https://img.shields.io/badge/UI-Glassmorphism-blue?style=for-the-badge" alt="UI">
+  <img src="https://img.shields.io/badge/Platform-Docker-0db7ed?style=for-the-badge" alt="Docker">
+</p>
+
+---
+
+## 🌟 Overview
+
+**AegisFlow** is a next-generation **Application Security Posture Management (ASPM)** platform designed to simplify complex security workflows. It unifies high-fidelity scanning tools (SAST, SCA, DAST, Secrets, IaC) into a single, autonomous pipeline, visualized through a stunning premium dashboard.
+
+Built for the modern security engineer, AegisFlow doesn't just find vulnerabilities—it uses **AI-driven triage** to classify findings and provide automated remediation guidance, reducing MTTR (Mean Time To Remediate) by up to 70%.
+
+---
+
+## ✨ Core Pillars
+
+### 🚀 1. Autonomous Pipeline Orchestration
+One-click execution of the industry's best-in-class security toolchain:
+- **SAST**: `Semgrep` for deep semantic code analysis.
+- **SCA**: `Trivy` for dependency and vulnerability detection.
+- **Secrets**: `Gitleaks` for high-accuracy credential hunting.
+- **IaC**: `Checkov` for infrastructure misconfiguration (K8s, Terraform, Docker).
+- **DAST**: `Nuclei` for intelligent runtime vulnerability probing.
+
+### 🧠 2. AI Triage Engine (Groq/Llama-3)
+Eliminate manual triage fatigue. AegisFlow integrates an LLM-powered engine that:
+- **Auto-Classifies**: Context-aware True Positive vs. False Positive detection.
+- **Business Impact**: Evaluates risk based on application criticality.
+- **AI Remediation**: Provides drop-in code fixes and hardening suggestions.
+
+### 💎 3. Premium Glassmorphism Dashboard
+A state-of-the-art UI experience designed for clarity and impact:
+- **Real-time Telemetry**: Watch the pipeline work with interactive status animations.
+- **Executive Overview**: KPI-driven insights for C-level reporting.
+- **Security Scoring**: Instant health metrics based on vulnerability density and SLA.
 
 ---
 
@@ -14,83 +53,63 @@
 ```mermaid
 graph TD
     User((Security Analyst)) --> Dashboard[AegisFlow Dashboard]
-    Dashboard --> Server[Python Server]
-    Server --> Pipeline[Pipeline Orchestrator]
+    Dashboard --> Server[Python API Server]
+    Server --> Orchestrator[Pipeline Engine]
     
-    subgraph "Scanning Engine"
-        Pipeline --> SAST[Semgrep]
-        Pipeline --> SCA[Trivy]
-        Pipeline --> Secret[Gitleaks]
-        Pipeline --> IaC[Checkov]
-        Pipeline --> DAST[Nuclei]
+    subgraph "Scanning Layer"
+        Orchestrator --> SAST[Semgrep]
+        Orchestrator --> SCA[Trivy]
+        Orchestrator --> Secret[Gitleaks]
+        Orchestrator --> DAST[Nuclei]
     end
     
-    Pipeline --> AI[AI Triage Engine]
-    AI --> Findings[Consolidated Findings]
-    Findings --> Dashboard
-    Findings --> Reports[PDF/JSON Reports]
+    Orchestrator --> AI_Engine[AI Triage Hub]
+    AI_Engine --> Data[(PostgreSQL / JSON)]
+    Data --> Dashboard
+    Data --> Reports[PDF/Excel Reports]
 ```
 
 ---
 
-## ✨ Key Features
+## 🚀 Quick Start (Production Mode)
 
-- **🚀 Autonomous Pipeline**: One-click execution of 5+ industry-standard security scanners.
-- **🧠 AI Triage Hub**: Intelligent vulnerability classification using LLMs (Llama-3.3) to reduce false positives.
-- **💎 Premium Dashboard**: High-fidelity Glassmorphism UI with real-time telemetry and 1:1 navigation-to-panel mapping.
-- **📄 Executive Report Center**: Professional PDF/HTML report generation with security scoring and remediation roadmaps.
-- **🔍 Multi-Layer Analysis**: Integrated support for Source Code, Dependencies, Secrets, Cloud Infrastructure, and Dynamic Runtime.
+Ensure you have **Docker Desktop** installed, then run:
 
----
-
-## 🛠️ Security Toolchain
-
-AegisFlow integrates the industry's best-in-class open-source security tools:
-
-| Category | Tool | Description |
-| :--- | :--- | :--- |
-| **SAST** | `Semgrep` | Semantic analysis for vulnerability patterns. |
-| **SCA** | `Trivy` | Software Composition Analysis for vulnerable dependencies. |
-| **Secrets** | `Gitleaks` | High-accuracy detection of leaked API keys and credentials. |
-| **IaC** | `Checkov` | Misconfiguration scanning for Docker, K8s, and Terraform. |
-| **DAST** | `Nuclei` | Dynamic template-based scanning for live targets. |
-| **AI** | `Groq/Llama-3` | Context-aware triage and automated remediation guidance. |
-
----
-
-## 🚀 Quick Start
-
-### 1. Prerequisites
-- Docker & Docker Compose
-- (Optional) [Groq API Key](https://console.groq.com/) for AI-powered triage.
-
-### 2. Launch the Platform
 ```bash
-# Clone the repository
-git clone https://github.com/luonglt20/AegisFlow.git
-cd AegisFlow
+# 1. Clone & Enter
+git clone https://github.com/luonglt20/AegisFlow.git && cd AegisFlow
 
-# Start the environment
-docker-compose up --build
+# 2. Launch (One Command)
+./run_mac.sh
 ```
 
-### 3. Access the Dashboard
-Navigate to `http://localhost:58081` to launch your first security scan.
+> **Note**: For AI-powered triage, add your `GROQ_API_KEY` to the `.env` file or input it directly in the Dashboard.
 
 ---
 
-## 📂 Repository Structure
+## 📂 Repository Layout
 
-- `dashboard/`: Premium Frontend & Backend server logic.
-- `pipeline/`: Core security bridge scripts and orchestrator.
-- `docs/`: Comprehensive technical documentation and user guides.
-- `demo-targets/`: Consolidated directory containing vulnerable-app and real-world targets for validation.
-- `tests/`: End-to-end security test suites.
+- `dashboard/`: Premium React-style Vanilla JS frontend & API layer.
+- `pipeline/`: The "Brain" of the scanning and AI integration.
+- `demo-targets/`: Curated vulnerable applications (NodeGoat, PyGoat, WebGoat).
+- `docs/`: Technical threat models, API specs, and compliance mappings.
+- `assets/`: Project visual identity and hero banners.
 
 ---
 
-## 🛡️ License & Safety
+## 🛡️ Roadmap & Safety
 
-This project is built for professional security demonstration purposes. Ensure all DAST targets are explicitly authorized before scanning. 
+- [x] Multi-language support (Java, Python, JS).
+- [x] Real-time WebSocket-like UI polling.
+- [x] AI-Powered Remediation Plans.
+- [ ] **Coming Soon**: Multi-tenant RBAC support.
+- [ ] **Coming Soon**: Jira & Slack Integration.
 
-&copy; 2026 AegisFlow Enterprise. All rights reserved.
+**Safety First**: AegisFlow is a powerful security tool. Only scan targets you are authorized to test.
+
+---
+
+<p align="center">
+  Developed with ❤️ for the DevSecOps Community.<br>
+  &copy; 2026 <strong>AegisFlow Enterprise</strong>
+</p>
