@@ -139,6 +139,23 @@ class AegisHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": "Missing scan target"}).encode())
                 return
 
+            # Validate the target path actually exists
+            target_abs = os.path.join(os.getcwd(), target.lstrip('./'))
+            if not os.path.exists(target_abs):
+                # Try to suggest valid targets
+                demo_dir = os.path.join(os.getcwd(), 'demo-targets')
+                suggestions = []
+                if os.path.isdir(demo_dir):
+                    suggestions = [f"./demo-targets/{d}" for d in os.listdir(demo_dir)
+                                   if os.path.isdir(os.path.join(demo_dir, d)) and not d.startswith('.')]
+                hint = f" Available targets: {', '.join(suggestions)}" if suggestions else ""
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({
+                    "error": f"Target path not found: '{target}'.{hint}"
+                }).encode())
+                return
             try:
                 target_url = resolve_target_url(target, params.get('target_url', ''))
             except ValueError as exc:

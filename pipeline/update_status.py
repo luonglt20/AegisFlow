@@ -23,9 +23,22 @@ def update_status(updates):
     for i in range(0, len(updates), 2):
         if i + 1 < len(updates):
             key = updates[i]
-            val = updates[i+1]
+            raw_val = updates[i+1]
+            # Coerce to proper types
+            if raw_val.lower() == 'true':
+                val = True
+            elif raw_val.lower() == 'false':
+                val = False
+            else:
+                try:
+                    val = int(raw_val)
+                except ValueError:
+                    try:
+                        val = float(raw_val)
+                    except ValueError:
+                        val = raw_val
             status[key] = val
-            print(f"[*] Status Update: {key} -> {val}")
+            print(f"[*] Status Update: {key} -> {val} ({type(val).__name__})")
 
     # Write back
     os.makedirs(os.path.dirname(STATUS_FILE), exist_ok=True)

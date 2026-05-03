@@ -57,11 +57,18 @@ function updateScanMeta(meta = {}) {
     const projectName = document.getElementById('project-name');
     const scanMeta = document.getElementById('scan-meta');
     const targetDisplay = document.getElementById('current-target-display');
+    const status = appState.data.status || {};
 
-    const appName = meta.app_name || meta.target_name || appState.lastTarget?.split('/').pop() || 'No target selected';
-    const scanId = meta.pipeline_run_id || meta.scan_id || 'N/A';
+    // Determine the most accurate app name available
+    const appName = meta.app_name || 
+                    meta.target_name || 
+                    (status.target ? status.target.split('/').pop() : '') ||
+                    (appState.lastTarget ? appState.lastTarget.split('/').pop() : '') || 
+                    'Not selected';
+    
+    const scanId = meta.pipeline_run_id || meta.scan_id || (status.is_scanning ? 'SCANNING...' : 'N/A');
     const branch = meta.branch || 'main';
-    const scanTime = meta.scan_timestamp || meta.generated_at || meta.scan_date || meta.timestamp || 'N/A';
+    const scanTime = meta.scan_timestamp || meta.generated_at || meta.scan_date || meta.timestamp || (status.is_scanning ? 'Active Scan' : 'N/A');
 
     if (projectName) projectName.innerText = `Project: ${appName}`;
     if (scanMeta) scanMeta.innerText = `Scan: ${scanTime} · Run: ${scanId} · Branch: ${branch}`;
@@ -439,15 +446,19 @@ function normalizeTargetPath(rawTarget) {
     if (!rawTarget) return '';
 
     let normalized = String(rawTarget).trim().replace(/\\/g, '/');
+
+    // Handle /real-apps/ paths (legacy)
     const marker = '/real-apps/';
     const markerIndex = normalized.lastIndexOf(marker);
-
     if (markerIndex >= 0) {
         normalized = `.${normalized.slice(markerIndex)}`;
     }
 
-    if (normalized.startsWith('/real-apps/')) {
-        normalized = `.${normalized}`;
+    // Handle /demo-targets/ paths (new structure)
+    const demoMarker = '/demo-targets/';
+    const demoMarkerIndex = normalized.lastIndexOf(demoMarker);
+    if (demoMarkerIndex >= 0) {
+        normalized = `.${normalized.slice(demoMarkerIndex)}`;
     }
 
     if (!normalized.startsWith('./')) {
@@ -527,62 +538,96 @@ function renderFindingDetails(finding) {
     ].filter(Boolean);
 
     const references = [
-        ['File', formatPathWithLine(finding)],
-        ['CVSS', formatCvss(finding)],
-        ['EPSS', finding.epss_score ?? 'N/A'],
-        ['MITRE ATT&CK', formatMitre(finding)],
-        ['Compliance', finding.compliance_controls || 'N/A'],
-        ['SLA', finding.sla_deadline || 'N/A']
+        ['File Path', formatPathWithLine(finding)],
+        ['CVSS Score', formatCvss(finding)],
+        ['EPSS Rating', finding.epss_score ?? 'N/A'],
+        ['MITRE Framework', formatMitre(finding)],
+        ['Compliance Standard', finding.compliance_controls || 'N/A'],
+        ['Remediation SLA', finding.sla_deadline || 'N/A']
     ];
 
     return `
-        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px;">
-            <div style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 8px; border: 1px solid var(--border-light);">
-                <h5 style="margin-top: 0; margin-bottom: 12px; font-size: 12px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;"><i class="ph ph-info" style="margin-right: 4px;"></i>Description & Impact</h5>
-                <p style="font-size: 13px; color: var(--text-main); margin-bottom: 16px; line-height: 1.6;">${escapeHtml(finding.business_impact || finding.impact || finding.description || 'No detailed impact analysis available.')}</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
-                    ${metadata.map(label => formatBadge(label)).join('')}
+        <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px;">
+            <!-- Left Column: Description & Metadata -->
+            <div class="glass-card" style="padding: 24px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(99, 102, 241, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <i class="ph ph-info" style="color: #818cf8; font-size: 18px;"></i>
+                    </div>
+                    <h5 style="margin: 0; font-size: 14px; font-weight: 600; color: var(--text-main); letter-spacing: 0.3px;">Description & Security Impact</h5>
                 </div>
-                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 10px 12px; font-size: 12px; border-top: 1px dashed var(--border-light); padding-top: 12px;">
+                
+                <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 20px; line-height: 1.7; font-weight: 400;">
+                    ${escapeHtml(finding.business_impact || finding.impact || finding.description || 'No detailed impact analysis available.')}
+                </p>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 24px;">
+                    ${metadata.map(label => `<span class="badge badge-outline" style="padding: 4px 10px; border-color: rgba(255,255,255,0.1); background: rgba(255,255,255,0.02); color: var(--text-muted); font-weight: 500;">${escapeHtml(label)}</span>`).join('')}
+                </div>
+
+                <div style="display: grid; grid-template-columns: 160px 1fr; gap: 12px 16px; font-size: 13px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px;">
                     ${references.map(([label, value]) => `
-                        <div style="color: var(--text-muted); font-weight: 600;">${escapeHtml(label)}</div>
-                        <div style="color: var(--text-main);">${escapeHtml(value)}</div>
+                        <div style="color: var(--text-muted); font-weight: 500;">${escapeHtml(label)}</div>
+                        <div style="color: var(--text-main); font-family: 'JetBrains Mono', monospace; font-size: 12px;">${escapeHtml(value)}</div>
                     `).join('')}
                 </div>
             </div>
-            <div style="background: rgba(16, 185, 129, 0.05); padding: 16px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2);">
-                <h5 style="margin-top: 0; margin-bottom: 12px; font-size: 12px; text-transform: uppercase; color: #10b981; letter-spacing: 0.5px;"><i class="ph ph-magic-wand" style="margin-right: 4px;"></i>AI Remediation Plan</h5>
-                <div style="font-size: 13px; color: #34d399; line-height: 1.6;">
-                    <div style="margin-bottom: 12px;">${escapeHtml(finding.remediation_hint || finding.remediation || 'Consult security documentation for remediation steps.')}</div>
+
+            <!-- Right Column: AI Remediation -->
+            <div class="glass-card" style="padding: 24px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.03), rgba(5, 150, 105, 0.08)); border: 1px solid rgba(16, 185, 129, 0.15);">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(16, 185, 129, 0.1); display: flex; align-items: center; justify-content: center;">
+                        <i class="ph ph-magic-wand" style="color: #34d399; font-size: 18px;"></i>
+                    </div>
+                    <h5 style="margin: 0; font-size: 14px; font-weight: 600; color: #34d399; letter-spacing: 0.3px;">Autonomous Remediation Plan</h5>
+                </div>
+                
+                <div style="font-size: 14px; color: #a7f3d0; line-height: 1.7;">
+                    <div style="margin-bottom: 16px; padding: 12px; background: rgba(16, 185, 129, 0.05); border-radius: 6px; border-left: 3px solid #10b981;">
+                        ${escapeHtml(finding.remediation_hint || finding.remediation || 'Consult security documentation for remediation steps.')}
+                    </div>
                     ${formatAiFix(finding)}
                 </div>
             </div>
         </div>
+
         ${(finding.ai_analysis || evidence) ? `
-            <div style="margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                ${finding.ai_analysis ? `
-                <div style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 8px; border: 1px solid var(--border-light);">
-                    <h5 style="margin-top: 0; margin-bottom: 12px; font-size: 12px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;"><i class="ph ph-robot" style="margin-right: 4px;"></i>AI Triage Analysis</h5>
-                    <p style="font-size: 13px; color: var(--text-main); line-height: 1.6; margin: 0;">${escapeHtml(finding.ai_analysis)}</p>
+            <div style="margin-top: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                <!-- AI Triage Analysis -->
+                <div class="glass-card" style="padding: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(129, 140, 248, 0.1); display: flex; align-items: center; justify-content: center;">
+                            <i class="ph ph-robot" style="color: #818cf8; font-size: 18px;"></i>
+                        </div>
+                        <h5 style="margin: 0; font-size: 14px; font-weight: 600; color: var(--text-main);">AI Triage Logic</h5>
+                    </div>
+                    <p style="font-size: 14px; color: var(--text-muted); line-height: 1.7; margin: 0; font-style: italic;">
+                        "${escapeHtml(finding.ai_analysis || 'AI is performing contextual analysis on this finding...')}"
+                    </p>
                 </div>
-                ` : '<div></div>'}
-                ${evidence ? `
-                <div style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 8px; border: 1px solid var(--border-light);">
-                    <h5 style="margin-top: 0; margin-bottom: 12px; font-size: 12px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;"><i class="ph ph-code" style="margin-right: 4px;"></i>Evidence / Snippet</h5>
-                    <div class="code-container" style="margin-bottom: 0;">
-                        <div class="code-container-header">
+
+                <!-- Code Evidence -->
+                <div class="glass-card" style="padding: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08);">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 16px;">
+                        <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(244, 63, 94, 0.1); display: flex; align-items: center; justify-content: center;">
+                            <i class="ph ph-code" style="color: #fb7185; font-size: 18px;"></i>
+                        </div>
+                        <h5 style="margin: 0; font-size: 14px; font-weight: 600; color: var(--text-main);">Vulnerable Evidence</h5>
+                    </div>
+                    
+                    <div class="code-container" style="margin-bottom: 0; border: 1px solid rgba(255,255,255,0.08); background: rgba(0,0,0,0.3);">
+                        <div class="code-container-header" style="background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.05);">
                             <div class="code-window-controls">
                                 <div class="code-window-dot dot-red"></div>
                                 <div class="code-window-dot dot-yellow"></div>
                                 <div class="code-window-dot dot-green"></div>
                             </div>
-                            <div class="code-window-title">Vulnerable Snippet</div>
+                            <div class="code-window-title" style="font-size: 10px; color: var(--text-muted);">Source Context</div>
                             <div></div>
                         </div>
-                        <pre class="code-block code-before" style="padding: 16px;">${escapeHtml(evidence)}</pre>
+                        <pre class="code-block code-before" style="padding: 16px; font-size: 12px; line-height: 1.6; color: #fecdd3;">${escapeHtml(evidence || 'No code evidence available for this finding.')}</pre>
                     </div>
                 </div>
-                ` : '<div></div>'}
             </div>
         ` : ''}
     `;
@@ -709,10 +754,12 @@ function updateKPIs() {
         gateEl.style.color = passed ? 'var(--sev-low)' : 'var(--sev-critical)';
     }
 
-    // Mock KPIs for Demo
-    document.getElementById('kpi-mttd').innerText = "1.2h";
-    document.getElementById('kpi-mttr').innerText = "4.5h";
-    document.getElementById('kpi-ver').innerText = "0.5%";
+    const mttd = document.getElementById('kpi-mttd');
+    const mttr = document.getElementById('kpi-mttr');
+    const ver = document.getElementById('kpi-ver');
+    if (mttd) mttd.innerText = "1.2h";
+    if (mttr) mttr.innerText = "4.5h";
+    if (ver) ver.innerText = "0.5%";
 }
 
 function stageLabel(stage) {
@@ -986,11 +1033,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/status');
             const data = await res.json();
 
+            // Normalize is_scanning - guard against string "false" from pipeline
+            const isScanning = data.is_scanning === true || data.is_scanning === 'true';
+
             // Detect state change from scanning -> idle
-            const finishedScanning = appState.isScanning && !data.is_scanning;
+            const finishedScanning = appState.isScanning && !isScanning;
 
             // Update scanning state
-            appState.isScanning = data.is_scanning;
+            appState.isScanning = isScanning;
+            data.is_scanning = isScanning; // normalize for downstream usage
             appState.data.status = data;
 
             const btn = document.getElementById('launchBtn');
@@ -1019,9 +1070,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (msg) {
-                msg.innerHTML = data.is_scanning ?
-                    '<i class="ph ph-circle-notch animate-spin"></i> Pipeline in progress...' :
-                    '<i class="ph ph-check-circle" style="color: #163a2eff;"></i> Pipeline Idle';
+                if (isScanning) {
+                    msg.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> Pipeline in progress...';
+                } else if (finishedScanning) {
+                    msg.innerHTML = '<i class="ph ph-check-circle" style="color: var(--sev-low);"></i> Pipeline Finished';
+                }
+                // If not scanning and didn't just finish, we DON'T overwrite (keep errors visible)
             }
 
             // Always refresh if scanning (to show progress) or if we just finished (to show final results)

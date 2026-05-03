@@ -10,22 +10,22 @@
   --brand-light: #fff0e5;
   --brand-gradient: linear-gradient(135deg, #ff6b00, #ff8c3a);
 
-  /* Backgrounds */
-  --bg-base: #f8fafc;
-  --bg-surface: #ffffff;
-  --bg-surface-hover: #f1f5f9;
-  --bg-sidebar: rgba(255, 255, 255, 0.85);
+  /* Backgrounds (Refined for Glassmorphism) */
+  --bg-base: #0f172a; /* Slate 900 */
+  --bg-surface: rgba(30, 41, 59, 0.7); /* Slate 800 with Alpha */
+  --bg-surface-hover: rgba(51, 65, 85, 0.8);
+  --bg-sidebar: rgba(15, 23, 42, 0.9);
 
   /* Borders & Shadows */
-  --border-light: #e2e8f0;
+  --border-light: rgba(255, 255, 255, 0.08);
   --border-focus: #ff6b00;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 20px rgba(0,0,0,0.04);
-  --shadow-lg: 0 10px 40px rgba(255, 107, 0, 0.08);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-md: 0 4px 20px rgba(0,0,0,0.3);
+  --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.5);
 
   /* Text */
-  --text-main: #0c1220;
-  --text-muted: #44556b;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
   --text-inverted: #ffffff;
 
   /* Severity Colors */
@@ -33,6 +33,21 @@
   --sev-high: #f97316;
   --sev-medium: #f59e0b;
   --sev-low: #10b981;
+}
+
+.glass-card {
+    background: var(--bg-surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
 }
 
 * {
@@ -189,26 +204,27 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Main Content Area */
-#main-content {
+.main-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: var(--bg-base);
-  position: relative;
-  overflow: hidden;
+  overflow-y: auto;
+  background-color: var(--bg-base);
 }
 
 /* Header / Topbar */
-#topbar {
+.top-header {
   height: 64px;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(12px);
+  background-color: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-light);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
-  z-index: 40;
+  padding: 0 32px;
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  backdrop-filter: blur(20px);
 }
 
 .view-container {

@@ -381,7 +381,7 @@
                         <div style="flex-grow: 1; position: relative;">
                             <input type="text" id="scanTarget"
                                    style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px 15px; color: white; font-size: 14px; font-family: 'JetBrains Mono', monospace;"
-                                   placeholder="./real-apps/juice-shop or ./path/to/your-app"
+                                   placeholder="./demo-targets/nodegoat or ./path/to/your-app"
                                    value="">
                             <button id="browseBtn" onclick="document.getElementById('directoryPicker').click()"
                                     style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: var(--brand-primary); border: none; border-radius: 6px; width: 32px; height: 32px; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
@@ -420,12 +420,39 @@
                 </div>
                 <div class="modal-body">
                   <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <div class="project-item-card" onclick="selectProject('./real-apps/juice-shop')">
+                    <div class="project-item-card" onclick="selectProject('./demo-targets/nodegoat')">
+                      <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="ph ph-folder" style="font-size: 24px; color: #22d3ee;"></i>
+                        <div>
+                          <div style="font-weight: 600; font-size: 14px;">OWASP NodeGoat</div>
+                          <div style="font-size: 11px; color: var(--text-muted);">Node.js · OWASP Top 10</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="project-item-card" onclick="selectProject('./demo-targets/pygoat')">
+                      <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="ph ph-folder" style="font-size: 24px; color: #10b981;"></i>
+                        <div>
+                          <div style="font-weight: 600; font-size: 14px;">OWASP PyGoat</div>
+                          <div style="font-size: 11px; color: var(--text-muted);">Python/Django · OWASP Top 10</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="project-item-card" onclick="selectProject('./demo-targets/vulnerable-app')">
+                      <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="ph ph-folder" style="font-size: 24px; color: #f97316;"></i>
+                        <div>
+                          <div style="font-weight: 600; font-size: 14px;">AegisFlow Vulnerable App</div>
+                          <div style="font-size: 11px; color: var(--text-muted);">Custom target for testing</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="project-item-card" onclick="selectProject('./demo-targets/real-apps/juice-shop')">
                       <div style="display: flex; align-items: center; gap: 12px;">
                         <i class="ph ph-folder" style="font-size: 24px; color: #9966FF;"></i>
                         <div>
                           <div style="font-weight: 600; font-size: 14px;">OWASP Juice Shop</div>
-                          <div style="font-size: 11px; color: var(--text-muted);">Modern Web Security Target</div>
+                          <div style="font-size: 11px; color: var(--text-muted);">Modern Web · Requires Docker</div>
                         </div>
                       </div>
                     </div>

@@ -1,0 +1,30 @@
+{
+  "name": "vulnerable-app",
+  "version": "1.0.0",
+  "description": "⚠️  Intentionally vulnerable Node.js app for DevSecOps pipeline demo. DO NOT deploy to production.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "dependencies": {
+    "express": "4.18.2",
+    "sqlite3": "5.1.6",
+    "lodash": "4.17.20",
+    "axios": "0.21.1",
+    "log4js": "6.9.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "keywords": [
+    "devsecops",
+    "demo",
+    "vulnerable",
+    "appsec",
+    "pipeline"
+  ],
+  "author": "AppSec Team – For Demo Purposes Only",
+  "license": "MIT",
+  "_comment_security": "WARNING: This package.json intentionally pins vulnerable dependency versions for scan demonstration. CVE-2021-23337 (lodash@4.17.20), CVE-2022-0155 (axios@0.21.1). Do NOT use in production."
+}
