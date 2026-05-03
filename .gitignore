@@ -3,6 +3,10 @@ node_modules/
 __pycache__/
 *.pyc
 pipeline/.bin/
+.agents/
+ai_skills/
+dashboard/data/
+tmp/
 
 # Exclude Data, Logs, Tests as requested
 mock-data/
@@ -11,7 +15,6 @@ logs/
 NodeGoat/
 vulnerable-app/
 test-target-app/
-tests/
 test/
 *results.json
 *.log

@@ -48,7 +48,8 @@ For portability, some stages support controlled fallback behavior:
 
 - `build` and `test` stages use lightweight validation when a selected target does not expose a portable build/test command.
 - AI triage uses Groq when `GROQ_API_KEY` is provided; otherwise it falls back to deterministic local reasoning templates.
-- DAST runs against a live URL when `TARGET_URL` is reachable; if no live target is provided, the framework documents predictive mode in the report.
+- DAST runs against a live URL only when the backend approves the target. By default, demo targets such as `juice-shop` are inferred server-side; extra live targets must be declared through `AEGIS_ALLOWED_DAST_TARGETS`.
+- If no approved live target is available, the framework records predictive DAST mode in the report instead of probing an arbitrary URL.
 
 These fallbacks are deliberate and are explained in the PDF report along with their limits.
 
@@ -56,13 +57,20 @@ These fallbacks are deliberate and are explained in the PDF report along with th
 
 1. Optionally copy `.env.example` to `.env`.
 2. Optionally add `GROQ_API_KEY` for live AI triage.
-3. Start the stack:
+3. Optionally add `AEGIS_ALLOWED_DAST_TARGETS` as a comma-separated allowlist of extra live DAST URLs if you need more than the built-in demo targets.
+4. Start the stack:
 
 ```bash
 docker-compose up --build
 ```
 
-4. Open `http://localhost:58081`.
+Example:
+
+```bash
+AEGIS_ALLOWED_DAST_TARGETS=https://demo.example.com,http://staging.internal:8080 docker-compose up --build
+```
+
+5. Open `http://localhost:58081`.
 
 ## Useful Commands
 

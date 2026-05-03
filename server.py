@@ -5,6 +5,7 @@ import subprocess
 import os
 import threading
 import shutil
+from urllib.parse import urlsplit, urlunsplit
 
 PORT = 58081
 DIRECTORY = "dashboard"
@@ -20,13 +21,67 @@ def write_dashboard_file(filename, content):
 def normalize_target_url(target_url):
     if not target_url:
         return ""
-    return str(target_url).strip()
+    normalized = str(target_url).strip()
+    parsed = urlsplit(normalized)
+
+    if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("Invalid target URL. Only absolute http/https URLs are allowed.")
+
+    return urlunsplit((
+        parsed.scheme.lower(),
+        parsed.netloc.lower(),
+        parsed.path or "",
+        parsed.query or "",
+        "",
+    ))
 
 
 def normalize_target_path(target):
     if not target:
         return ""
     return str(target).strip()
+
+
+def infer_target_url_for_target(target):
+    normalized_target = normalize_target_path(target).replace("\\", "/").lower()
+    if "juice-shop" in normalized_target:
+        return "http://juice-shop:3000"
+    return ""
+
+
+def get_allowed_target_urls(target):
+    allowed_urls = set()
+    inferred_url = infer_target_url_for_target(target)
+    if inferred_url:
+        allowed_urls.add(inferred_url)
+
+    raw_allowlist = os.environ.get("AEGIS_ALLOWED_DAST_TARGETS", "")
+    for item in raw_allowlist.split(","):
+        candidate = item.strip()
+        if not candidate:
+            continue
+        try:
+            allowed_urls.add(normalize_target_url(candidate))
+        except ValueError:
+            continue
+
+    return allowed_urls
+
+
+def resolve_target_url(target, requested_target_url):
+    requested_url = normalize_target_url(requested_target_url)
+    inferred_url = infer_target_url_for_target(target)
+
+    if not requested_url:
+        return inferred_url
+
+    if requested_url not in get_allowed_target_urls(target):
+        raise ValueError(
+            "Target URL is not approved for live DAST. "
+            "Use a server-recognized demo target or configure AEGIS_ALLOWED_DAST_TARGETS."
+        )
+
+    return requested_url
 
 
 class ReusableThreadingTCPServer(socketserver.ThreadingTCPServer):
@@ -73,9 +128,9 @@ class AegisHandler(http.server.SimpleHTTPRequestHandler):
             params = json.loads(post_data)
 
             target = normalize_target_path(params.get('target', ''))
-            target_url = normalize_target_url(params.get('target_url', ''))
             use_ai = params.get('use_ai', True)
             api_key = params.get('groq_key', '')
+            scanners = params.get('scanners', ['sast', 'sca', 'sbom', 'secret', 'iac', 'dast'])
 
             if not target:
                 self.send_response(400)
@@ -84,8 +139,17 @@ class AegisHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write(json.dumps({"error": "Missing scan target"}).encode())
                 return
 
+            try:
+                target_url = resolve_target_url(target, params.get('target_url', ''))
+            except ValueError as exc:
+                self.send_response(400)
+                self.send_header('Content-type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": str(exc)}).encode())
+                return
+
             IS_SCANNING = True
-            thread = threading.Thread(target=self.run_scan, args=(target, target_url, use_ai, api_key))
+            thread = threading.Thread(target=self.run_scan, args=(target, target_url, use_ai, api_key, scanners))
             thread.start()
 
             self.send_response(200)
@@ -95,13 +159,14 @@ class AegisHandler(http.server.SimpleHTTPRequestHandler):
         else:
             self.send_error(404)
 
-    def run_scan(self, target, target_url, use_ai, api_key):
+    def run_scan(self, target, target_url, use_ai, api_key, scanners):
         global IS_SCANNING
-        print(f"[AGENT] Starting Enterprise Pipeline on: {target} (URL: {target_url}, AI: {use_ai})")
+        print(f"[AGENT] Starting Enterprise Pipeline on: {target} (URL: {target_url}, AI: {use_ai}, Scanners: {scanners})")
 
         env = os.environ.copy()
         env["SCAN_TARGET"] = target
         env["TARGET_URL"] = target_url
+        env["ENABLED_SCANNERS"] = ",".join(scanners)
 
         if use_ai and api_key:
             env["GROQ_API_KEY"] = api_key
@@ -130,12 +195,12 @@ class AegisHandler(http.server.SimpleHTTPRequestHandler):
                 "pipeline_state": "RUNNING",
                 "build": "running",
                 "test": "pending",
-                "sast": "pending",
-                "sca": "pending",
-                "sbom": "pending",
-                "secret": "pending",
-                "iac": "pending",
-                "dast": "pending",
+                "sast": "pending" if "sast" in scanners else "skipped",
+                "sca": "pending" if "sca" in scanners else "skipped",
+                "sbom": "pending" if "sbom" in scanners else "skipped",
+                "secret": "pending" if "secret" in scanners else "skipped",
+                "iac": "pending" if "iac" in scanners else "skipped",
+                "dast": "pending" if "dast" in scanners else "skipped",
                 "policy": "pending",
                 "audit": "pending",
                 "report": "pending"

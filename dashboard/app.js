@@ -2,20 +2,20 @@
 // Built for AppSec Excellence & Task 1-5 Compliance
 
 const appState = {
-  data: {
-    findings: [],
-    policy: {},
-    quality: {},
-    sbom: {},
-    audit: [],
-    status: {
-        is_scanning: false,
-        sast: 'pending', sca: 'pending', iac: 'pending', dast: 'pending', secret: 'pending'
-    }
-  },
-  filters: { severity: 'all' },
-  currentTab: 'executive',
-  selectedTargetUrl: ''
+    data: {
+        findings: [],
+        policy: {},
+        quality: {},
+        sbom: {},
+        audit: [],
+        status: {
+            is_scanning: false,
+            sast: 'pending', sca: 'pending', iac: 'pending', dast: 'pending', secret: 'pending'
+        }
+    },
+    filters: { severity: 'all' },
+    currentTab: 'executive',
+    selectedTargetUrl: ''
 };
 
 function safeArray(value) {
@@ -82,51 +82,51 @@ async function fetchJsonWithFallback(urls, fallbackValue) {
 }
 
 const UI_CONFIG = {
-  colors: {
-    CRITICAL: '#ef4444',
-    HIGH: '#f59e0b',
-    MEDIUM: '#3b82f6',
-    LOW: '#10b981'
-  }
+    colors: {
+        CRITICAL: '#ef4444',
+        HIGH: '#f59e0b',
+        MEDIUM: '#3b82f6',
+        LOW: '#10b981'
+    }
 };
 
 // ─── Data Engine ───────────────────────────────────────────────
 async function loadData() {
-  try {
-    const timestamp = Date.now();
-    console.log(`[DASHBOARD] Syncing Full State...`);
+    try {
+        const timestamp = Date.now();
+        console.log(`[DASHBOARD] Syncing Full State...`);
 
-    const [findingsPayload, policyPayload, auditPayload, statusPayload, buildPayload, testPayload, sbomPayload] = await Promise.all([
-      fetchJsonWithFallback([
-        `/data/full_report_triaged.json?v=${timestamp}`,
-        `/data/full_report.json?v=${timestamp}`
-      ], { findings: [] }),
-      fetchJsonWithFallback([`/data/policy_result.json?v=${timestamp}`], {}),
-      fetchJsonWithFallback([`/data/audit_log.json?v=${timestamp}`], []),
-      fetchJsonWithFallback([`/api/status?v=${timestamp}`], {}),
-      fetchJsonWithFallback([`/data/build_report.json?v=${timestamp}`], {}),
-      fetchJsonWithFallback([`/data/test_report.json?v=${timestamp}`], {}),
-      fetchJsonWithFallback([`/data/sbom.json?v=${timestamp}`], {})
-    ]);
+        const [findingsPayload, policyPayload, auditPayload, statusPayload, buildPayload, testPayload, sbomPayload] = await Promise.all([
+            fetchJsonWithFallback([
+                `/data/full_report_triaged.json?v=${timestamp}`,
+                `/data/full_report.json?v=${timestamp}`
+            ], { findings: [] }),
+            fetchJsonWithFallback([`/data/policy_result.json?v=${timestamp}`], {}),
+            fetchJsonWithFallback([`/data/audit_log.json?v=${timestamp}`], []),
+            fetchJsonWithFallback([`/api/status?v=${timestamp}`], {}),
+            fetchJsonWithFallback([`/data/build_report.json?v=${timestamp}`], {}),
+            fetchJsonWithFallback([`/data/test_report.json?v=${timestamp}`], {}),
+            fetchJsonWithFallback([`/data/sbom.json?v=${timestamp}`], {})
+        ]);
 
-    appState.data.findings = normalizeFindings(findingsPayload);
-    appState.data.policy = normalizePolicy(policyPayload);
-    appState.data.audit = normalizeAudit(auditPayload);
-    appState.data.status = statusPayload;
-    appState.data.quality = {
-        build: buildPayload?.stage ? buildPayload : policyPayload?.quality_summary?.build || {},
-        test: testPayload?.stage ? testPayload : policyPayload?.quality_summary?.test || {}
-    };
-    appState.data.sbom = sbomPayload || {};
-    appState.data.scanMeta = findingsPayload?.scan_metadata || {};
+        appState.data.findings = normalizeFindings(findingsPayload);
+        appState.data.policy = normalizePolicy(policyPayload);
+        appState.data.audit = normalizeAudit(auditPayload);
+        appState.data.status = statusPayload;
+        appState.data.quality = {
+            build: buildPayload?.stage ? buildPayload : policyPayload?.quality_summary?.build || {},
+            test: testPayload?.stage ? testPayload : policyPayload?.quality_summary?.test || {}
+        };
+        appState.data.sbom = sbomPayload || {};
+        appState.data.scanMeta = findingsPayload?.scan_metadata || {};
 
-    console.log(`[DASHBOARD] Ingested ${appState.data.findings.length} findings.`);
+        console.log(`[DASHBOARD] Ingested ${appState.data.findings.length} findings.`);
 
-    refreshUI();
+        refreshUI();
 
-  } catch (err) {
-    console.warn("[DASHBOARD] Sync Error:", err);
-  }
+    } catch (err) {
+        console.warn("[DASHBOARD] Sync Error:", err);
+    }
 }
 
 function refreshUI() {
@@ -200,17 +200,10 @@ function updateStatusChrome() {
     if (sidebarLabel) sidebarLabel.textContent = status.is_scanning ? 'Pipeline running' : label;
 }
 
-/**
- * Renders a high-fidelity preview of the Security Assessment Report.
- */
 function renderReportPreview() {
     const preview = document.getElementById('report-preview');
-    if (!preview) {
-        console.warn("[REPORT] Preview container not found");
-        return;
-    }
+    if (!preview) return;
 
-    console.log("[REPORT] Rendering preview...");
     const findings = appState.data.findings || [];
     const meta = appState.data.scanMeta || {};
     const stats = appState.data.status || {};
@@ -218,93 +211,102 @@ function renderReportPreview() {
     const criticals = findings.filter(f => f.severity === 'CRITICAL');
     const highs = findings.filter(f => f.severity === 'HIGH');
 
-    // Professional Security Report Template
+    // Group findings by scan type
+    const grouped = findings.reduce((acc, f) => {
+        const type = (f.scan_type || 'OTHER').toUpperCase();
+        if (!acc[type]) acc[type] = [];
+        acc[type].push(f);
+        return acc;
+    }, {});
+
+    const getIcon = (t) => {
+        if (t === 'SAST') return 'ph-code';
+        if (t === 'SCA') return 'ph-package';
+        if (t === 'DAST') return 'ph-globe';
+        if (t === 'IAC') return 'ph-cloud-check';
+        if (t === 'SECRET') return 'ph-key';
+        return 'ph-shield';
+    };
+
     preview.innerHTML = `
-        <div class="report-document" style="max-width: 900px; margin: 0 auto; color: #1e293b; line-height: 1.6; font-family: 'Inter', -apple-system, sans-serif; background: #fff; padding: 10px;">
-            <!-- Header Section -->
+        <div class="report-document" style="max-width: 900px; margin: 0 auto; color: #1e293b; line-height: 1.6; font-family: 'Inter', sans-serif; background: #fff; padding: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 4px solid #ff6b00; padding-bottom: 24px; margin-bottom: 40px;">
                 <div>
                     <h1 style="color: #ff6b00; font-size: 32px; margin: 0 0 8px 0; font-weight: 800; letter-spacing: -1px;">SECURITY ASSESSMENT</h1>
-                    <div style="font-size: 14px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
-                        Report ID: ${meta.pipeline_run_id && meta.pipeline_run_id !== 'pending' ? meta.pipeline_run_id : 'AF-PRD-' + Math.random().toString(36).substr(2, 6).toUpperCase()}
+                    <div style="font-size: 14px; color: #64748b; font-weight: 600; text-transform: uppercase;">
+                        Report ID: ${meta.pipeline_run_id || 'AF-' + Math.random().toString(36).substr(2, 6).toUpperCase()}
                     </div>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-weight: 900; font-size: 20px; color: #0f172a; margin-bottom: 4px;">AEGISFLOW ENTERPRISE</div>
-                    <div style="font-size: 14px; color: #64748b; font-weight: 500;">Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                    <div style="font-weight: 900; font-size: 20px; color: #0f172a;">AEGISFLOW ENTERPRISE</div>
+                    <div style="font-size: 14px; color: #64748b;">Generated: ${new Date().toLocaleDateString()}</div>
                 </div>
             </div>
 
-            <!-- 1. Executive Summary -->
             <section style="margin-bottom: 48px;">
-                <h2 style="font-size: 20px; color: #0f172a; border-left: 5px solid #ff6b00; padding-left: 15px; margin-bottom: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">1. Executive Summary</h2>
+                <h2 style="font-size: 20px; color: #0f172a; border-left: 5px solid #ff6b00; padding-left: 15px; margin-bottom: 24px; font-weight: 800; text-transform: uppercase;">1. Executive Summary</h2>
                 <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px;">
-                    <p style="font-size: 16px; color: #334155; margin-bottom: 32px; font-weight: 500;">
-                        This automated assessment analyzes the security posture of <span style="color: #ff6b00; font-weight: 700;">${meta.app_name || 'Autonomous Target'}</span>.
-                        The engine evaluated SAST patterns, SCA dependencies, Hardcoded Secrets, and Infrastructure configurations.
+                    <p style="font-size: 16px; color: #334155; margin-bottom: 32px;">
+                        Automated assessment for <span style="color: #ff6b00; font-weight: 700;">${meta.app_name || 'Autonomous Target'}</span>.
                     </p>
-
                     <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;">
-                        <div style="background: #fff; border: 1px solid #e2e8f0; padding: 24px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                            <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: #64748b; margin-bottom: 12px; letter-spacing: 1px;">Security Score</div>
-                            <div style="font-size: 40px; font-weight: 900; color: ${(stats.security_score || 0) < 70 ? '#ef4444' : '#10b981'};">
-                                ${stats.security_score || '--'}<span style="font-size: 20px; color: #94a3b8;">/100</span>
-                            </div>
+                        <div style="background: #fff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 8px;">Security Score</div>
+                            <div style="font-size: 32px; font-weight: 900; color: ${(stats.security_score || 0) < 70 ? '#ef4444' : '#10b981'};">${stats.security_score || '--'}</div>
                         </div>
-                        <div style="background: #fff; border: 1px solid #fee2e2; padding: 24px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                            <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: #991b1b; margin-bottom: 12px; letter-spacing: 1px;">Critical Risks</div>
-                            <div style="font-size: 40px; font-weight: 900; color: #ef4444;">${criticals.length}</div>
+                        <div style="background: #fff; border: 1px solid #fee2e2; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 11px; font-weight: 800; color: #991b1b; margin-bottom: 8px;">Critical Risks</div>
+                            <div style="font-size: 32px; font-weight: 900; color: #ef4444;">${criticals.length}</div>
                         </div>
-                        <div style="background: #fff; border: 1px solid #ffedd5; padding: 24px; border-radius: 12px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                            <div style="font-size: 11px; text-transform: uppercase; font-weight: 800; color: #9a3412; margin-bottom: 12px; letter-spacing: 1px;">High Risks</div>
-                            <div style="font-size: 40px; font-weight: 900; color: #f97316;">${highs.length}</div>
+                        <div style="background: #fff; border: 1px solid #ffedd5; padding: 20px; border-radius: 12px; text-align: center;">
+                            <div style="font-size: 11px; font-weight: 800; color: #9a3412; margin-bottom: 8px;">High Risks</div>
+                            <div style="font-size: 32px; font-weight: 900; color: #f97316;">${highs.length}</div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- 2. Priority Risk Analysis -->
             <section style="margin-bottom: 48px;">
-                <h2 style="font-size: 20px; color: #0f172a; border-left: 5px solid #ff6b00; padding-left: 15px; margin-bottom: 24px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">2. Priority Risk Analysis</h2>
-                <div style="overflow: hidden; border: 1px solid #e2e8f0; border-radius: 16px;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                        <thead>
-                            <tr style="background: #f1f5f9;">
-                                <th style="padding: 16px; text-align: left; font-weight: 800; color: #475569; border-bottom: 2px solid #e2e8f0;">Severity</th>
-                                <th style="padding: 16px; text-align: left; font-weight: 800; color: #475569; border-bottom: 2px solid #e2e8f0;">Vulnerability Details</th>
-                                <th style="padding: 16px; text-align: left; font-weight: 800; color: #475569; border-bottom: 2px solid #e2e8f0;">Business Impact</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${findings.length === 0 ? `
-                                <tr>
-                                    <td colspan="3" style="padding: 40px; text-align: center; color: #64748b; font-weight: 500;">
-                                        No active findings detected for this target.
-                                    </td>
-                                </tr>
-                            ` : findings.slice(0, 10).map(f => `
-                                <tr style="border-bottom: 1px solid #f1f5f9;">
-                                    <td style="padding: 16px; vertical-align: top;">
-                                        <div style="display: inline-block; font-size: 10px; font-weight: 900; padding: 4px 10px; border-radius: 6px; background: ${f.severity === 'CRITICAL' ? '#fee2e2' : '#ffedd5'}; color: ${f.severity === 'CRITICAL' ? '#991b1b' : '#9a3412'}; border: 1px solid ${f.severity === 'CRITICAL' ? '#fecaca' : '#fed7aa'};">
-                                            ${f.severity}
-                                        </div>
-                                    </td>
-                                    <td style="padding: 16px; vertical-align: top;">
-                                        <div style="font-weight: 800; font-size: 15px; color: #0f172a; margin-bottom: 6px;">${f.title}</div>
-                                        <div style="font-size: 12px; color: #64748b; font-family: 'JetBrains Mono', monospace;">${f.affected_file}:${f.affected_line}</div>
-                                    </td>
-                                    <td style="padding: 16px; vertical-align: top; font-size: 13px; color: #475569; max-width: 250px;">
-                                        ${f.business_impact || 'Potential unauthorized access or full system compromise.'}
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                ${findings.length > 10 ? `<p style="margin-top: 20px; font-size: 13px; color: #64748b; font-weight: 500; text-align: center;">... displaying top 10 of ${findings.length} findings ...</p>` : ''}
+                <h2 style="font-size: 20px; color: #0f172a; border-left: 5px solid #ff6b00; padding-left: 15px; margin-bottom: 24px; font-weight: 800; text-transform: uppercase;">2. Detailed Analysis by Layer</h2>
+                ${Object.keys(grouped).length === 0 ? '<p style="color: #64748b; text-align: center; padding: 40px; background: #f8fafc; border-radius: 12px;">No findings detected in any layer.</p>' : ''}
+                
+                ${Object.entries(grouped).map(([type, list]) => `
+                    <div style="margin-bottom: 32px; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                        <div style="background: #f1f5f9; padding: 12px 20px; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; gap: 10px;">
+                            <i class="ph-bold ${getIcon(type)}" style="font-size: 18px; color: #ff6b00;"></i>
+                            <span style="font-weight: 800; font-size: 14px; color: #334155;">${type} Analysis - ${list.length} Findings</span>
+                        </div>
+                        <div style="padding: 0;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
+                                <thead style="background: #f8fafc;">
+                                    <tr>
+                                        <th style="padding: 12px 20px; text-align: left; border-bottom: 1px solid #f1f5f9; width: 100px;">Severity</th>
+                                        <th style="padding: 12px 20px; text-align: left; border-bottom: 1px solid #f1f5f9;">Finding Details</th>
+                                        <th style="padding: 12px 20px; text-align: left; border-bottom: 1px solid #f1f5f9;">Remediation Hint</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${list.map(f => `
+                                        <tr>
+                                            <td style="padding: 16px 20px; vertical-align: top; border-bottom: 1px solid #f1f5f9;">
+                                                <span style="background: ${f.severity === 'CRITICAL' ? '#fee2e2' : f.severity === 'HIGH' ? '#ffedd5' : '#f1f5f9'}; color: ${f.severity === 'CRITICAL' ? '#991b1b' : f.severity === 'HIGH' ? '#9a3412' : '#475569'}; padding: 4px 8px; border-radius: 4px; font-weight: 700; font-size: 10px;">${f.severity}</span>
+                                            </td>
+                                            <td style="padding: 16px 20px; vertical-align: top; border-bottom: 1px solid #f1f5f9;">
+                                                <div style="font-weight: 700; color: #0f172a; margin-bottom: 4px;">${escapeHtml(f.title)}</div>
+                                                <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #64748b; margin-bottom: 8px;">${escapeHtml(formatPathWithLine(f))}</div>
+                                                <div style="background: #fafafa; border: 1px solid #f0f0f0; border-radius: 6px; padding: 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #444; white-space: pre-wrap; overflow-x: auto;">${escapeHtml(JSON.stringify(f.evidence || f.description || {}, null, 2))}</div>
+                                            </td>
+                                            <td style="padding: 16px 20px; vertical-align: top; border-bottom: 1px solid #f1f5f9;">
+                                                <div style="color: #334155; font-size: 12px;">${escapeHtml(f.remediation_hint || 'Contact security team for fix.')}</div>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `).join('')}
             </section>
-
-            <!-- Footer Section -->
             <div style="margin-top: 80px; padding-top: 32px; border-top: 2px solid #f1f5f9; text-align: center;">
                 <div style="font-weight: 800; font-size: 14px; color: #0f172a; margin-bottom: 8px;">AEGISFLOW AUTONOMOUS PIPELINE</div>
                 <div style="font-size: 12px; color: #94a3b8; font-weight: 500;">
@@ -413,9 +415,19 @@ function formatAiFix(finding) {
     if (fix.explanation) parts.push(`<div style="margin-bottom: 10px;">${escapeHtml(fix.explanation)}</div>`);
     if (fix.after) {
         parts.push(`
-            <div style="margin-top: 10px;">
-                <div style="font-size: 11px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase;">Suggested Fix</div>
-                <pre style="white-space: pre-wrap; overflow-x: auto; margin: 0; font-size: 11px; line-height: 1.45;">${escapeHtml(fix.after)}</pre>
+            <div style="margin-top: 16px;">
+                <div class="code-container" style="margin-bottom: 0;">
+                    <div class="code-container-header">
+                        <div class="code-window-controls">
+                            <div class="code-window-dot dot-red"></div>
+                            <div class="code-window-dot dot-yellow"></div>
+                            <div class="code-window-dot dot-green"></div>
+                        </div>
+                        <div class="code-window-title">Suggested Fix / Remediation</div>
+                        <div></div>
+                    </div>
+                    <pre class="code-block code-after" style="padding: 16px;">${escapeHtml(fix.after)}</pre>
+                </div>
             </div>
         `);
     }
@@ -455,6 +467,22 @@ function inferTargetUrl(target) {
 
     // Non-containerized demo targets should avoid accidentally reusing Juice Shop as DAST target.
     return '';
+}
+
+async function parseApiResponse(res) {
+    let data = {};
+
+    try {
+        data = await res.json();
+    } catch (err) {
+        data = {};
+    }
+
+    if (!res.ok) {
+        throw new Error(data.error || `Request failed with status ${res.status}.`);
+    }
+
+    return data;
 }
 
 function openProjectBrowser() {
@@ -509,37 +537,52 @@ function renderFindingDetails(finding) {
 
     return `
         <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px;">
-            <div>
-                <h5 style="margin-bottom: 8px; font-size: 12px; text-transform: uppercase; color: #64748b;">Description & Impact</h5>
-                <p style="font-size: 13px; color: #334155; margin-bottom: 12px;">${escapeHtml(finding.business_impact || finding.impact || finding.description || 'No detailed impact analysis available.')}</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+            <div style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 8px; border: 1px solid var(--border-light);">
+                <h5 style="margin-top: 0; margin-bottom: 12px; font-size: 12px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;"><i class="ph ph-info" style="margin-right: 4px;"></i>Description & Impact</h5>
+                <p style="font-size: 13px; color: var(--text-main); margin-bottom: 16px; line-height: 1.6;">${escapeHtml(finding.business_impact || finding.impact || finding.description || 'No detailed impact analysis available.')}</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
                     ${metadata.map(label => formatBadge(label)).join('')}
                 </div>
-                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 8px 12px; font-size: 12px;">
+                <div style="display: grid; grid-template-columns: 140px 1fr; gap: 10px 12px; font-size: 12px; border-top: 1px dashed var(--border-light); padding-top: 12px;">
                     ${references.map(([label, value]) => `
-                        <div style="color: #64748b; font-weight: 600;">${escapeHtml(label)}</div>
-                        <div style="color: #0f172a;">${escapeHtml(value)}</div>
+                        <div style="color: var(--text-muted); font-weight: 600;">${escapeHtml(label)}</div>
+                        <div style="color: var(--text-main);">${escapeHtml(value)}</div>
                     `).join('')}
                 </div>
             </div>
-            <div>
-                <h5 style="margin-bottom: 8px; font-size: 12px; text-transform: uppercase; color: #10b981;">AI Remediation Plan</h5>
-                <div style="background: rgba(16, 185, 129, 0.05); padding: 12px; border-radius: 6px; font-size: 12px; color: #047857; border: 1px solid rgba(16, 185, 129, 0.2);">
-                    <div>${escapeHtml(finding.remediation_hint || finding.remediation || 'Consult security documentation for remediation steps.')}</div>
+            <div style="background: rgba(16, 185, 129, 0.05); padding: 16px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                <h5 style="margin-top: 0; margin-bottom: 12px; font-size: 12px; text-transform: uppercase; color: #10b981; letter-spacing: 0.5px;"><i class="ph ph-magic-wand" style="margin-right: 4px;"></i>AI Remediation Plan</h5>
+                <div style="font-size: 13px; color: #34d399; line-height: 1.6;">
+                    <div style="margin-bottom: 12px;">${escapeHtml(finding.remediation_hint || finding.remediation || 'Consult security documentation for remediation steps.')}</div>
                     ${formatAiFix(finding)}
                 </div>
             </div>
         </div>
         ${(finding.ai_analysis || evidence) ? `
             <div style="margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div>
-                    <h5 style="margin-bottom: 8px; font-size: 12px; text-transform: uppercase; color: #64748b;">AI Analysis</h5>
-                    <p style="font-size: 12px; color: #334155;">${escapeHtml(finding.ai_analysis || 'N/A')}</p>
+                ${finding.ai_analysis ? `
+                <div style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 8px; border: 1px solid var(--border-light);">
+                    <h5 style="margin-top: 0; margin-bottom: 12px; font-size: 12px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;"><i class="ph ph-robot" style="margin-right: 4px;"></i>AI Triage Analysis</h5>
+                    <p style="font-size: 13px; color: var(--text-main); line-height: 1.6; margin: 0;">${escapeHtml(finding.ai_analysis)}</p>
                 </div>
-                <div>
-                    <h5 style="margin-bottom: 8px; font-size: 12px; text-transform: uppercase; color: #64748b;">Evidence / Snippet</h5>
-                    <pre style="background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 8px; font-size: 11px; line-height: 1.4; white-space: pre-wrap; overflow-x: auto; margin: 0;">${escapeHtml(evidence || 'N/A')}</pre>
+                ` : '<div></div>'}
+                ${evidence ? `
+                <div style="background: rgba(255,255,255,0.02); padding: 16px; border-radius: 8px; border: 1px solid var(--border-light);">
+                    <h5 style="margin-top: 0; margin-bottom: 12px; font-size: 12px; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.5px;"><i class="ph ph-code" style="margin-right: 4px;"></i>Evidence / Snippet</h5>
+                    <div class="code-container" style="margin-bottom: 0;">
+                        <div class="code-container-header">
+                            <div class="code-window-controls">
+                                <div class="code-window-dot dot-red"></div>
+                                <div class="code-window-dot dot-yellow"></div>
+                                <div class="code-window-dot dot-green"></div>
+                            </div>
+                            <div class="code-window-title">Vulnerable Snippet</div>
+                            <div></div>
+                        </div>
+                        <pre class="code-block code-before" style="padding: 16px;">${escapeHtml(evidence)}</pre>
+                    </div>
                 </div>
+                ` : '<div></div>'}
             </div>
         ` : ''}
     `;
@@ -754,23 +797,26 @@ function renderFindingsList() {
         const severity = String(f.severity || 'LOW').toUpperCase();
         const safeId = escapeHtml(f.id || `finding-${index}`);
         return `
-        <div class="finding-card ${severity.toLowerCase()}">
-            <div class="finding-header" onclick="toggleDetails('${safeId}')">
+        <div class="finding-card ${severity.toLowerCase()}" style="margin-bottom: 12px; background: rgba(255,255,255,0.02); border-radius: 8px; border: 1px solid var(--border-light); overflow: hidden; transition: all 0.2s;">
+            <div class="finding-header" onclick="toggleDetails('${safeId}')" style="display: flex; align-items: center; padding: 16px; cursor: pointer;">
                 <div style="flex: 1;">
-                    <div style="display: flex; gap: 8px; margin-bottom: 6px;">
-                        <span class="badge badge-${severity.toLowerCase()}">${escapeHtml(severity)}</span>
-                        ${f.status === 'AI_TRIAGED' ? '<span class="badge" style="background: rgba(245,158,11,0.1); color: #f59e0b;">AI TRIAGED</span>' : ''}
-                        <span class="badge badge-outline">${escapeHtml(f.source_tool || f.tool || 'Engine')}</span>
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <span class="badge badge-${severity.toLowerCase()}" style="padding: 4px 8px; font-weight: 700; font-size: 10px;">${escapeHtml(severity)}</span>
+                        ${f.status === 'AI_TRIAGED' ? '<span class="badge" style="background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3);"><i class="ph ph-sparkle" style="margin-right: 4px;"></i>AI TRIAGED</span>' : ''}
+                        <span class="badge badge-outline" style="border-color: var(--border-light);">${escapeHtml(f.source_tool || f.tool || 'Engine')}</span>
                     </div>
-                    <h4 style="margin: 0; font-size: 14px;">${escapeHtml(f.title || 'Untitled finding')}</h4>
-                    <div style="font-size: 11px; color: #666; font-family: monospace; margin-top: 4px;">${escapeHtml(formatPathWithLine(f))}</div>
+                    <h4 style="margin: 0; font-size: 16px; color: var(--text-main); font-weight: 600;">${escapeHtml(f.title || 'Untitled finding')}</h4>
+                    <div style="font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-top: 6px;"><i class="ph ph-file-code" style="margin-right: 4px;"></i>${escapeHtml(formatPathWithLine(f))}</div>
                 </div>
-                <div style="text-align: right; margin-right: 15px;">
-                    <div style="font-weight: 700; color: var(--sev-${severity.toLowerCase()});">CVSS ${escapeHtml(formatCvss(f))}</div>
+                <div style="text-align: right; margin-right: 20px;">
+                    <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px;">CVSS Score</div>
+                    <div style="font-size: 18px; font-weight: 800; color: var(--sev-${severity.toLowerCase()}); background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 6px; border: 1px solid var(--sev-${severity.toLowerCase()}); display: inline-block;">${escapeHtml(formatCvss(f))}</div>
                 </div>
-                <i class="ph ph-caret-down" id="icon-${safeId}"></i>
+                <div style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 50%;">
+                    <i class="ph ph-caret-down" id="icon-${safeId}" style="color: var(--text-muted); transition: transform 0.2s;"></i>
+                </div>
             </div>
-            <div id="details-${safeId}" class="finding-details" style="display: none; padding: 20px; border-top: 1px solid var(--border-light);">
+            <div id="details-${safeId}" class="finding-details" style="display: none; padding: 24px; border-top: 1px solid var(--border-light); background: rgba(0,0,0,0.2);">
                 ${renderFindingDetails(f)}
             </div>
         </div>
@@ -823,6 +869,12 @@ async function triggerScan() {
     const useAI = aiToggle ? aiToggle.checked : true;
     const apiKey = useAI && apiKeyInput ? apiKeyInput.value.trim() : '';
 
+    const allScanners = ['sast', 'sca', 'sbom', 'secret', 'iac', 'dast'];
+    const enabledScanners = allScanners.filter(id => {
+        const el = document.getElementById(`scanner-${id}`);
+        return el ? el.checked : true;
+    });
+
     // UI Feedback
     const btn = document.getElementById('launchBtn');
     const msg = document.getElementById('scan-status-msg');
@@ -845,11 +897,12 @@ async function triggerScan() {
                 target: target,
                 target_url: appState.selectedTargetUrl,
                 use_ai: useAI,
-                groq_key: apiKey
+                groq_key: apiKey,
+                scanners: enabledScanners
             })
         });
 
-        const data = await res.json();
+        const data = await parseApiResponse(res);
         console.log("[SERVER] Scan Status:", data);
         if (data.status === 'SCAN_STARTED') {
             appState.isScanning = true;
@@ -858,7 +911,9 @@ async function triggerScan() {
     } catch (err) {
         console.error("[UI] Launch Failed:", err);
         if (btn) btn.disabled = false;
-        if (msg) msg.innerText = "Launch Failed. Check Connection.";
+        if (msg) {
+            msg.innerHTML = `<i class="ph ph-warning-circle" style="color: #f59e0b;"></i> ${escapeHtml(err.message || 'Launch Failed. Check Connection.')}`;
+        }
     }
 }
 
@@ -882,6 +937,45 @@ function setFilter(key, val, btn) {
     renderFindingsList();
 }
 
+function exportJSON() {
+    if (!appState.data.findings || appState.data.findings.length === 0) {
+        alert("No data available to export.");
+        return;
+    }
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appState.data, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `aegisflow_report_${new Date().getTime()}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+
+function printReport() {
+    window.print();
+}
+
+function exportAuditCSV() {
+    if (!appState.data.audit || appState.data.audit.length === 0) {
+        alert("No audit logs available to export.");
+        return;
+    }
+    const headers = ["Timestamp", "Actor", "Action", "Finding ID", "Detail"];
+    const rows = appState.data.audit.map(a => [a.timestamp, a.actor, a.action, a.finding_id || '', a.detail]);
+
+    let csvContent = "data:text/csv;charset=utf-8,"
+        + headers.join(",") + "\n"
+        + rows.map(e => e.join(",")).join("\n");
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `aegisflow_audit_${new Date().getTime()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+}
+
 // ─── Initialization ──────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     loadData();
@@ -892,48 +986,50 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/status');
             const data = await res.json();
 
-            // Only reload if status changes or while scanning
-            if (data.is_scanning || data.is_scanning !== appState.isScanning) {
-                appState.isScanning = data.is_scanning;
-                appState.data.status = data; // Sync the full status object
+            // Detect state change from scanning -> idle
+            const finishedScanning = appState.isScanning && !data.is_scanning;
 
-                const btn = document.getElementById('launchBtn');
-                const msg = document.getElementById('scan-status-msg');
-                const progContainer = document.getElementById('progress-container');
-                const progStatus = document.getElementById('progress-status');
+            // Update scanning state
+            appState.isScanning = data.is_scanning;
+            appState.data.status = data;
 
-                if (btn) {
-                    btn.disabled = data.is_scanning;
-                    if (data.is_scanning) {
-                        btn.innerHTML = '<i class="ph ph-circle-notch animate-spin" style="font-size: 22px;"></i> SCANNING...';
-                        btn.style.background = 'linear-gradient(135deg, #444, #666)';
-                        btn.style.boxShadow = '0 0 15px rgba(255, 255, 255, 0.1)';
-                        btn.classList.add('pulse-active');
-                    } else {
-                        btn.innerHTML = '<i class="ph-bold ph-rocket-launch" style="font-size: 22px;"></i> RUN EVIDENCE-BASED SECURITY PIPELINE';
-                        btn.style.background = 'linear-gradient(135deg, #ff6b6b, #ff8e53)';
-                        btn.style.boxShadow = '0 4px 15px rgba(255, 107, 107, 0.3)';
-                        btn.classList.remove('pulse-active');
-                    }
+            const btn = document.getElementById('launchBtn');
+            const msg = document.getElementById('scan-status-msg');
+            const progContainer = document.getElementById('progress-container');
+            const progStatus = document.getElementById('progress-status');
+
+            if (btn) {
+                btn.disabled = data.is_scanning;
+                if (data.is_scanning) {
+                    btn.innerHTML = '<i class="ph ph-circle-notch animate-spin" style="font-size: 22px;"></i> PIPELINE RUNNING...';
+                    btn.style.background = 'linear-gradient(135deg, #444, #666)';
+                    btn.classList.add('pulse-active');
+                } else {
+                    btn.innerHTML = '<i class="ph-bold ph-rocket-launch" style="font-size: 22px;"></i> RUN EVIDENCE-BASED SECURITY PIPELINE';
+                    btn.style.background = 'linear-gradient(135deg, #ff6b00, #ff8c3a)';
+                    btn.classList.remove('pulse-active');
                 }
+            }
 
-                if (progContainer) {
-                    progContainer.style.display = data.is_scanning ? 'block' : 'none';
-                    if (data.is_scanning && progStatus) {
-                        progStatus.innerText = 'AUTONOMOUS PIPELINE IN PROGRESS...';
-                    }
+            if (progContainer) {
+                progContainer.style.display = data.is_scanning ? 'block' : 'none';
+                if (data.is_scanning && progStatus) {
+                    progStatus.innerText = 'AUTONOMOUS PIPELINE IN PROGRESS...';
                 }
+            }
 
-                if (msg) {
-                    msg.innerHTML = data.is_scanning ?
-                        '<i class="ph ph-circle-notch animate-spin"></i> Pipeline in progress...' :
-                        '<i class="ph ph-check-circle" style="color: #4dff88;"></i> Pipeline Idle';
-                }
+            if (msg) {
+                msg.innerHTML = data.is_scanning ?
+                    '<i class="ph ph-circle-notch animate-spin"></i> Pipeline in progress...' :
+                    '<i class="ph ph-check-circle" style="color: #163a2eff;"></i> Pipeline Idle';
+            }
 
+            // Always refresh if scanning (to show progress) or if we just finished (to show final results)
+            if (data.is_scanning || finishedScanning) {
                 loadData();
             }
-        } catch (e) {}
-    }, 4000);
+        } catch (e) { }
+    }, 3000);
 
     // Directory Picker Listener
     const picker = document.getElementById('directoryPicker');

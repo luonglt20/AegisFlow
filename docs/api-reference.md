@@ -29,29 +29,32 @@ Initiates a new security pipeline scan.
 |:---|:---|:---|:---|
 | `target` | `string` | ✅ Yes | Path to the application to scan, relative to `/app/` inside Docker |
 | `groq_key` | `string` | ❌ No | Groq API key for AI Triage. If empty, fallback mode activates |
-| `target_url` | `string` | ❌ No | Live URL for DAST (Nuclei) scanning. If empty, DAST is skipped |
+| `target_url` | `string` | ❌ No | Requested live URL for DAST (Nuclei). The backend only accepts URLs inferred from trusted demo targets or explicitly allowlisted through `AEGIS_ALLOWED_DAST_TARGETS`. |
 
-**Response (Success — 202 Accepted):**
+**Response (Success — 200 OK):**
 ```json
 {
-  "status": "started",
-  "message": "Pipeline launched for target: ./real-apps/juice-shop"
+  "status": "SCAN_STARTED"
 }
 ```
 
 **Response (Error — 400 Bad Request):**
 ```json
 {
-  "error": "No target specified"
+  "error": "Target URL is not approved for live DAST. Use a server-recognized demo target or configure AEGIS_ALLOWED_DAST_TARGETS."
 }
 ```
 
-**Response (Error — 409 Conflict):**
+**Response (Error — 400 Bad Request):**
 ```json
 {
-  "error": "A scan is already in progress"
+  "error": "Scan already in progress"
 }
 ```
+
+**Notes:**
+- If `target_url` is omitted and the selected target matches a built-in demo mapping such as `juice-shop`, the server derives the live DAST URL automatically.
+- If no approved live URL is available, the pipeline falls back to predictive DAST mode.
 
 ---
 
