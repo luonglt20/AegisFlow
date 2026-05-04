@@ -77,8 +77,8 @@ jobs:
           echo "$PIPELINE_EXIT" > security-results/policy_exit_code.txt
           exit 0
 
-      - name: Refresh report
-        run: python3 pipeline/generate_report.py
+     # - name: Refresh report
+     #  run: python3 pipeline/generate_report.py
 
       - name: Print policy summary
         run: |
