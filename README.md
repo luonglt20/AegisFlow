@@ -110,6 +110,6 @@ git clone https://github.com/luonglt20/AegisFlow.git && cd AegisFlow
 ---
 
 <p align="center">
-  Developed with ❤️ for the DevSecOps Community.<br>
+  Developed for the DevSecOps Community.<br>
   &copy; 2026 <strong>AegisFlow Enterprise</strong>
 </p>
